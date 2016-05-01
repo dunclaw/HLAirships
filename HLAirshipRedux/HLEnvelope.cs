@@ -345,9 +345,6 @@ namespace HLEnvelope
 			/// Per-frame update 
 			/// Called ONLY when Part is ACTIVE! 
 
-			try { AirshipPIDcontrol(); }
-			catch (Exception ex) { print("Airship PID Control Exception!"); print(ex.Message); }
-
 			// Freeze in place if requested
 			if (togglePersistenceControl)
 				persistentParts();
@@ -499,11 +496,6 @@ namespace HLEnvelope
 			catch (Exception ex) { print("findEnvelopes Exception!"); print(ex.Message); }
 		}
 
-		private void AirshipPIDcontrol()
-		{
-			// public PidController( float Kp, float Ki, float Kd, int integrationBuffer, float clamp )
-			// brakePid = new PidController((float)(totalGravityForce / maxBuoyancy.magnitude / 5), (float)(totalGravityForce / maxBuoyancy.magnitude * expandRate * 100), (float)(totalGravityForce / maxBuoyancy.magnitude * expandRate * 0.0625), 50, 1);
-		}
 
 		public void leadEnvelopeUpdate()
 		{
@@ -860,6 +852,7 @@ namespace HLEnvelope
 		{
 			// this.vessel.SetWorldVelocity(new Vector3d(0,0,0));
 
+			// This code causes vessel to explode when executed
 			//if (this.vessel.srf_velocity.magnitude > makeStationarySpeedClamp)
 			//{
 			//	this.vessel.SetWorldVelocity(vessel.srf_velocity.normalized * makeStationarySpeedClamp * 0.9);
@@ -870,7 +863,6 @@ namespace HLEnvelope
 		}
 
 		// Envelopes determine their positions and effect buoyant force on themselves
-
 		public void envelopeUpdate()
 		{
 			Vector3 stabilizeVector = Vector3.one;
@@ -949,11 +941,6 @@ namespace HLEnvelope
 			envelope.specificVolumeFractionEnvelope += delta * Time.deltaTime;
 		}
 
-		public void OnDrawStats()
-		{
-			GUILayout.TextArea("Envelope volume: " + envelopeVolume + "\nInitial Gas Specific Volume: " + Mathf.RoundToInt(specificVolumeFractionEnvelope * 100) + "%");
-		}
-
 		// Distance from center of mass
 		public float DistanceFromCoM(Vector3 position, Vector3 CoM, Vector3 mainBody, Vector3 direction)
 		{
@@ -961,42 +948,7 @@ namespace HLEnvelope
 			return Vector3.Dot((position - mainBody) - (CoM - mainBody), direction);
 		}
 
-		// "Continuous" angle calculations
-		private float ContAngle(Vector3 fwd, Vector3 targetDir, Vector3 upDir)
-		{
-			float angle = Vector3.Angle(fwd, targetDir);
 
-			return angle;
-		}
-
-		// Direction of angle
-		private float AngleDir(Vector3 fwd, Vector3 targetDir, Vector3 up)
-		{
-			Vector3 perp = Vector3.Cross(fwd, targetDir);
-			float dir = Vector3.Dot(perp, up);
-
-			if (dir > 0.0)
-			{
-				return 1.0f;
-			}
-			else if (dir < 0.0)
-			{
-				return -1.0f;
-			}
-			else
-			{
-				return 0.0f;
-			}
-		}
-
-
-		// This was recommended by Kreuzung
-		public void OnCenterOfLiftQuery(CenterOfLiftQuery q)
-		{
-			q.dir = Vector3.up;
-			q.lift = (float)envelopeVolume;
-			q.pos = transform.position;
-		}
 	}
 
 

@@ -191,29 +191,30 @@ namespace HLEnvelope
 
 				#region Persistence
 				// Allows "landing" (persistence) by slowing the vehicle, as long as the this.vessel has buoyancy
-				if (TotalBuoyancy > 0f)
-				{
-					if (Mathf.Abs((int)CurrentVessel.horizontalSrfSpeed) < MakeStationarySpeedMax && Mathf.Abs((int)CurrentVessel.verticalSpeed) < MakeStationarySpeedMax && (CurrentVessel.Landed || CurrentVessel.Splashed))
-					{
-						GUILayout.BeginHorizontal();
-						TogglePersistenceControl = GUILayout.Toggle(TogglePersistenceControl, "Make Slow to Save", mySty);
-						GUILayout.EndHorizontal();
-					}
-					else
-					{
-						GUILayout.BeginHorizontal();
-						if (this.CurrentVessel.Landed || this.CurrentVessel.Splashed)
-						{
-							GUILayout.Label("Reduce Speed to Save");
-						}
-						else if (MaxBuoyancy.magnitude > 0)
-						{
-							GUILayout.Label("Touch Ground to Save");
-							TogglePersistenceControl = false;
-						}
-						GUILayout.EndHorizontal();
-					}
-				}
+				// dunclaw: not sure what this was for, but it appears to cause a crash and isn't necessary
+				//if (TotalBuoyancy > 0f)
+				//{
+				//	if (Mathf.Abs((int)CurrentVessel.horizontalSrfSpeed) < MakeStationarySpeedMax && Mathf.Abs((int)CurrentVessel.verticalSpeed) < MakeStationarySpeedMax && (CurrentVessel.Landed || CurrentVessel.Splashed))
+				//	{
+				//		GUILayout.BeginHorizontal();
+				//		TogglePersistenceControl = GUILayout.Toggle(TogglePersistenceControl, "Make Slow to Save", mySty);
+				//		GUILayout.EndHorizontal();
+				//	}
+				//	else
+				//	{
+				//		GUILayout.BeginHorizontal();
+				//		if (this.CurrentVessel.Landed || this.CurrentVessel.Splashed)
+				//		{
+				//			GUILayout.Label("Reduce Speed to Save");
+				//		}
+				//		else if (MaxBuoyancy.magnitude > 0)
+				//		{
+				//			GUILayout.Label("Touch Ground to Save");
+				//			TogglePersistenceControl = false;
+				//		}
+				//		GUILayout.EndHorizontal();
+				//	}
+				//}
 				#endregion
 			}
 			else
