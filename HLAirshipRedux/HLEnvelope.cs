@@ -144,7 +144,6 @@ namespace HLEnvelope
 		private List<HLEnvelopePartModule> Envelopes = new List<HLEnvelopePartModule>();
 		private Part leadEnvelope;
 		private HLEnvelopePartModule envelope;
-		bool initializedControlWindow = false;
 
 		// Debug
 		// private int activeVessel = 0;
@@ -520,16 +519,24 @@ namespace HLEnvelope
 
 		private void SyncControlUIValues()
 		{
-			if (HLEnvelopeControlWindow.Instance)
+			if (HLEnvelopeControlWindow.Instance && vessel == FlightGlobals.ActiveVessel)
 			{
 				HLEnvelopeControlWindow.Instance.MakeStationarySpeedMax = makeStationarySpeedMax;
 				HLEnvelopeControlWindow.Instance.MaxBuoyancy = maxBuoyancy;
 				HLEnvelopeControlWindow.Instance.TotalBuoyancy = totalBuoyancy;
-				HLEnvelopeControlWindow.Instance.CurrentVessel = vessel;
 
-				targetBuoyantVessel = HLEnvelopeControlWindow.Instance.TargetBuoyantVessel;
-				targetVerticalVelocity = HLEnvelopeControlWindow.Instance.TargetVerticalVelocity;
 				toggleAltitudeControl = HLEnvelopeControlWindow.Instance.ToggleAltitudeControl;
+				if (toggleAltitudeControl)
+				{
+					// if altitude control is on, send calculated buoyancy value to GUI
+					HLEnvelopeControlWindow.Instance.TargetBuoyantVessel = targetBuoyantVessel;
+				}
+				else
+				{
+					// otherwise we just read the setting
+					targetBuoyantVessel = HLEnvelopeControlWindow.Instance.TargetBuoyantVessel;
+				}
+				targetVerticalVelocity = HLEnvelopeControlWindow.Instance.TargetVerticalVelocity;
 				toggleAutoPitch = HLEnvelopeControlWindow.Instance.ToggleAutoPitch;
 				togglePersistenceControl = HLEnvelopeControlWindow.Instance.TogglePersistenceControl;
 				stabilizeDirection = HLEnvelopeControlWindow.Instance.StabilizeDirection;
@@ -542,7 +549,7 @@ namespace HLEnvelope
 
 		private void InitControlUIValues()
 		{
-			if (HLEnvelopeControlWindow.Instance)
+			if (HLEnvelopeControlWindow.Instance && vessel == FlightGlobals.ActiveVessel)
 			{
 				HLEnvelopeControlWindow.Instance.MakeStationarySpeedMax = makeStationarySpeedMax;
 				HLEnvelopeControlWindow.Instance.MaxBuoyancy = maxBuoyancy;
@@ -664,10 +671,9 @@ namespace HLEnvelope
 			if(HLEnvelopeControlWindow.Instance)
 			{
 				HLEnvelopeControlWindow.Instance.Envelopes = Envelopes;
-				if(!initializedControlWindow)
+				if(FlightGlobals.ActiveVessel != HLEnvelopeControlWindow.Instance.CurrentVessel)
 				{
 					InitControlUIValues();
-					initializedControlWindow = true;
 				}
 				SyncControlUIValues();
 			}

@@ -96,9 +96,6 @@ namespace HLEnvelope
 
 		private void drawGUI()
 		{
-			if (CurrentVessel != FlightGlobals.ActiveVessel)
-				return;
-
 			windowPos = GUILayout.Window(airshipWindowID, windowPos, WindowGUI, "HooliganLabs", GUILayout.MinWidth(200));
 		}
 
