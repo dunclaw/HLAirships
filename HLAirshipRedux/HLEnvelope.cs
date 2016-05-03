@@ -10,7 +10,7 @@ using KSP;
 using System.Linq;
 
 
-namespace HLEnvelope
+namespace HLAirshipRedux
 {
 
 	public enum AnimationState : int

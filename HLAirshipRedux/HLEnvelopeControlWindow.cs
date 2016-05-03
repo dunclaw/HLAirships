@@ -4,14 +4,29 @@ using System.Collections.Generic;
 using UnityEngine;
 using KSP;
 using System.ComponentModel;
+using KSP.UI;
+using KSP.UI.Screens;
 
-namespace HLEnvelope
+namespace HLAirshipRedux
 {
 	[KSPAddon(KSPAddon.Startup.Flight, false)]
 	public class HLEnvelopeControlWindowFlight : HLEnvelopeControlWindow
 	{
 		public override string MonoName { get { return this.name; } }
 		//public override bool ViewAlarmsOnly { get { return false; } }
+	}
+
+	/// <summary>
+	/// Have to do this behaviour or some of the textures are unloaded on first entry into flight mode
+	/// </summary>
+	[KSPAddon(KSPAddon.Startup.MainMenu, false)]
+	public class InitialAirshipsTextureLoader : MonoBehaviour
+	{
+		//Awake Event - when the DLL is loaded
+		public void Awake()
+		{
+			AirshipResources.loadGUIAssets();
+		}
 	}
 
 	internal enum ButtonStyleEnum
@@ -66,11 +81,26 @@ namespace HLEnvelope
 				ToolbarButton = InitToolbarButton();
 			}
 			Instance = this;
+			GameEvents.onGUIApplicationLauncherReady.Add(OnGUIAppLauncherReady);
+			GameEvents.onGUIApplicationLauncherDestroyed.Add(DestroyAppLauncherButton);
+			GameEvents.onGameSceneLoadRequested.Add(OnGameSceneLoadRequestedForAppLauncher);
+
+			GameEvents.onShowUI.Add(OnShowUI);
+			GameEvents.onHideUI.Add(OnHideUI);
 			InitVariables();
 		}
 		private void InitVariables()
 		{
 			airshipWindowID = UnityEngine.Random.Range(1000, 2000000) + _AssemblyName.GetHashCode();
+		}
+
+		private void OnShowUI()
+		{
+			LogFormatted_DebugOnly("OnShowGUI Fired");
+		}
+		private void OnHideUI()
+		{
+			LogFormatted_DebugOnly("OnHideGUI Fired");
 		}
 
 		internal override void OnGUIEvery()
@@ -92,6 +122,132 @@ namespace HLEnvelope
 					activeGUI = false;
 				}
 			}
+		}
+		/// <summary>
+		/// Sets up the App Button - no longer called by the event as that only happens on StartMenu->SpaceCenter now
+		/// </summary>
+		void OnGUIAppLauncherReady()
+		{
+			MonoBehaviourExtended.LogFormatted_DebugOnly("AppLauncherReady");
+			if (ApplicationLauncher.Ready)
+			{
+				if (btnAppLauncher == null)
+				{
+					btnAppLauncher = InitAppLauncherButton();
+				}
+			}
+			else { LogFormatted("App Launcher-Not Actually Ready"); }
+		}
+
+		void OnGameSceneLoadRequestedForAppLauncher(GameScenes SceneToLoad)
+		{
+			LogFormatted_DebugOnly("GameSceneLoadRequest");
+			DestroyAppLauncherButton();
+		}
+		internal ApplicationLauncherButton btnAppLauncher = null;
+
+		internal ApplicationLauncherButton InitAppLauncherButton()
+		{
+			ApplicationLauncherButton retButton = null;
+
+			ApplicationLauncherButton[] lstButtons = FindObjectsOfType<ApplicationLauncherButton>();
+			//LogFormatted("AppLauncher: Creating Button-BEFORE", lstButtons.Length);
+			try
+			{
+				retButton = ApplicationLauncher.Instance.AddModApplication(
+					onAppLaunchToggleOn, onAppLaunchToggleOff,
+					onAppLaunchHoverOn, onAppLaunchHoverOff,
+					null, null,
+					ApplicationLauncher.AppScenes.FLIGHT,
+					(Texture)AirshipResources.iconAirshipControlWindow);
+			}
+			catch (Exception ex)
+			{
+				MonoBehaviourExtended.LogFormatted("AppLauncher: Failed to set up App Launcher Button\r\n{0}", ex.Message);
+				retButton = null;
+			}
+			lstButtons = FindObjectsOfType<ApplicationLauncherButton>();
+			//LogFormatted("AppLauncher: Creating Button-AFTER", lstButtons.Length);
+
+			return retButton;
+		}
+
+
+		internal void DestroyAppLauncherButton()
+		{
+			//LogFormatted("AppLauncher: Destroying Button-BEFORE NULL CHECK");
+			if (btnAppLauncher != null)
+			{
+				ApplicationLauncherButton[] lstButtons = FindObjectsOfType<ApplicationLauncherButton>();
+				LogFormatted("AppLauncher: Destroying Button-Button Count:{0}", lstButtons.Length);
+				ApplicationLauncher.Instance.RemoveModApplication(btnAppLauncher);
+				btnAppLauncher = null;
+			}
+			//LogFormatted("AppLauncher: Destroying Button-AFTER NULL CHECK");
+		}
+
+
+		internal Boolean AppLauncherToBeSetTrue = false;
+		internal DateTime AppLauncherToBeSetTrueAttemptDate;
+		internal void SetAppButtonToTrue()
+		{
+			if (!ApplicationLauncher.Ready)
+			{
+				LogFormatted_DebugOnly("not ready yet");
+				AppLauncherToBeSetTrueAttemptDate = DateTime.Now;
+				return;
+			}
+			ApplicationLauncherButton ButtonToToggle = btnAppLauncher;
+
+			if (ButtonToToggle == null)
+			{
+				LogFormatted_DebugOnly("Button Is Null");
+				AppLauncherToBeSetTrueAttemptDate = DateTime.Now;
+				return;
+			}
+
+		}
+
+		void onAppLaunchToggleOn()
+		{
+			MonoBehaviourExtended.LogFormatted_DebugOnly("TOn");
+
+			ControlWindowVisible = true;
+			MonoBehaviourExtended.LogFormatted_DebugOnly("{0}", ControlWindowVisible);
+		}
+		void onAppLaunchToggleOff()
+		{
+			MonoBehaviourExtended.LogFormatted_DebugOnly("TOff");
+
+			ControlWindowVisible = false;
+			MonoBehaviourExtended.LogFormatted_DebugOnly("{0}", ControlWindowVisible);
+		}
+		void onAppLaunchHoverOn()
+		{
+			MonoBehaviourExtended.LogFormatted_DebugOnly("HovOn");
+			//MouseOverAppLauncherBtn = true;
+		}
+		void onAppLaunchHoverOff()
+		{
+			MonoBehaviourExtended.LogFormatted_DebugOnly("HovOff");
+			//MouseOverAppLauncherBtn = false; 
+		}
+
+		//Destroy Event - when the DLL is loaded
+		internal override void OnDestroy()
+		{
+			LogFormatted("Destroying the KerbalAlarmClock-{0}", MonoName);
+
+			//Hook the App Launcher
+			GameEvents.onGUIApplicationLauncherReady.Remove(OnGUIAppLauncherReady);
+			GameEvents.onGUIApplicationLauncherDestroyed.Remove(DestroyAppLauncherButton);
+			GameEvents.onGameSceneLoadRequested.Remove(OnGameSceneLoadRequestedForAppLauncher);
+
+			GameEvents.onShowUI.Remove(OnShowUI);
+			GameEvents.onHideUI.Remove(OnHideUI);
+
+
+			DestroyAppLauncherButton();
 		}
 
 		private void drawGUI()
