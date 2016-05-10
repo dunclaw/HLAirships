@@ -1,0 +1,363 @@
+﻿using KSPPluginFramework;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using KSP;
+using System.ComponentModel;
+using KSP.UI;
+using KSP.UI.Screens;
+
+namespace HLAirships
+{
+	[KSPAddon(KSPAddon.Startup.EditorAny, false)]
+	public class HLBuildAidWindowEditor : HLBuildAidWindow
+	{
+		public override string MonoName { get { return this.name; } }
+		//public override bool ViewAlarmsOnly { get { return false; } }
+	}
+
+
+	public class HLBuildAidWindow : MonoBehaviourExtended
+	{
+
+		public bool EditorWindowVisible { get; set; }
+		private IButton ToolbarButton { get; set; }
+		public virtual String MonoName { get; set; }
+		public static HLBuildAidWindow Instance { get; set; }
+		public float TotalEnvelopeVolume { get; set; }
+		public float TotalMass { get; set; }
+
+		// TODO remove envelope scaling from here
+		public float EnvelopeVolumeScale { get; set; }
+
+		private Rect windowPos;
+		private int airshipWindowID;
+		private bool activeGUI;
+		private float windowWidth;
+		private int currentBody = REF_BODY_KERBIN;
+
+		public const int REF_BODY_KERBOL = 0;
+		public const int REF_BODY_KERBIN = 1;
+		public const int REF_BODY_MUN = 2;
+		public const int REF_BODY_MINMUS = 3;
+		public const int REF_BODY_MOHO = 4;
+		public const int REF_BODY_EVE = 5;
+		public const int REF_BODY_DUNA = 6;
+		public const int REF_BODY_IKE = 7;
+		public const int REF_BODY_JOOL = 8;
+		public const int REF_BODY_LAYTHE = 9;
+		public const int REF_BODY_VALL = 10;
+		public const int REF_BODY_BOP = 11;
+		public const int REF_BODY_TYLO = 12;
+		public const int REF_BODY_GILLY = 13;
+		public const int REF_BODY_POL = 14;
+		public const int REF_BODY_DRES = 15;
+		public const int REF_BODY_EELOO = 16;
+		public string[] selString = new string[] { "Kerbin", "Eve", "Duna", "Jool", "Laythe" };
+		public int[] BodyRef = new int[] { REF_BODY_KERBIN, REF_BODY_EVE, REF_BODY_DUNA, REF_BODY_JOOL, REF_BODY_LAYTHE };
+		public int currentSelection = 0;
+
+		internal override void Awake()
+		{
+			Instance = this;
+			GameEvents.onGUIApplicationLauncherReady.Add(OnGUIAppLauncherReady);
+			GameEvents.onGUIApplicationLauncherDestroyed.Add(DestroyAppLauncherButton);
+			GameEvents.onGameSceneLoadRequested.Add(OnGameSceneLoadRequestedForAppLauncher);
+
+			GameEvents.onShowUI.Add(OnShowUI);
+			GameEvents.onHideUI.Add(OnHideUI);
+			InitVariables();
+		}
+		private void InitVariables()
+		{
+			airshipWindowID = UnityEngine.Random.Range(1000, 2000000) + _AssemblyName.GetHashCode();
+		}
+
+		private void OnShowUI()
+		{
+			LogFormatted_DebugOnly("OnShowGUI Fired");
+		}
+		private void OnHideUI()
+		{
+			LogFormatted_DebugOnly("OnHideGUI Fired");
+		}
+
+		internal override void OnGUIEvery()
+		{
+			if (EditorWindowVisible)
+			{
+				if (!activeGUI)
+				{
+					initGUI();
+					activeGUI = true;
+				}
+
+				drawGUI();
+			}
+			else
+			{
+				if (activeGUI)
+				{
+					activeGUI = false;
+				}
+			}
+		}
+		/// <summary>
+		/// Sets up the App Button - no longer called by the event as that only happens on StartMenu->SpaceCenter now
+		/// </summary>
+		void OnGUIAppLauncherReady()
+		{
+			MonoBehaviourExtended.LogFormatted_DebugOnly("AppLauncherReady");
+			if (ApplicationLauncher.Ready)
+			{
+				if (btnAppLauncher == null)
+				{
+					btnAppLauncher = InitAppLauncherButton();
+				}
+			}
+			else { LogFormatted("App Launcher-Not Actually Ready"); }
+		}
+
+		void OnGameSceneLoadRequestedForAppLauncher(GameScenes SceneToLoad)
+		{
+			LogFormatted_DebugOnly("GameSceneLoadRequest");
+			DestroyAppLauncherButton();
+		}
+		internal ApplicationLauncherButton btnAppLauncher = null;
+
+		internal ApplicationLauncherButton InitAppLauncherButton()
+		{
+			ApplicationLauncherButton retButton = null;
+
+			ApplicationLauncherButton[] lstButtons = FindObjectsOfType<ApplicationLauncherButton>();
+			//LogFormatted("AppLauncher: Creating Button-BEFORE", lstButtons.Length);
+			try
+			{
+				retButton = ApplicationLauncher.Instance.AddModApplication(
+					onAppLaunchToggleOn, onAppLaunchToggleOff,
+					onAppLaunchHoverOn, onAppLaunchHoverOff,
+					null, null,
+					ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB,
+					(Texture)AirshipResources.iconAirshipControlWindow);
+			}
+			catch (Exception ex)
+			{
+				MonoBehaviourExtended.LogFormatted("AppLauncher: Failed to set up App Launcher Button\r\n{0}", ex.Message);
+				retButton = null;
+			}
+			lstButtons = FindObjectsOfType<ApplicationLauncherButton>();
+			//LogFormatted("AppLauncher: Creating Button-AFTER", lstButtons.Length);
+
+			return retButton;
+		}
+
+
+		internal void DestroyAppLauncherButton()
+		{
+			//LogFormatted("AppLauncher: Destroying Button-BEFORE NULL CHECK");
+			if (btnAppLauncher != null)
+			{
+				ApplicationLauncherButton[] lstButtons = FindObjectsOfType<ApplicationLauncherButton>();
+				LogFormatted("AppLauncher: Destroying Button-Button Count:{0}", lstButtons.Length);
+				ApplicationLauncher.Instance.RemoveModApplication(btnAppLauncher);
+				btnAppLauncher = null;
+			}
+			//LogFormatted("AppLauncher: Destroying Button-AFTER NULL CHECK");
+		}
+
+
+		internal Boolean AppLauncherToBeSetTrue = false;
+		internal DateTime AppLauncherToBeSetTrueAttemptDate;
+		internal void SetAppButtonToTrue()
+		{
+			if (!ApplicationLauncher.Ready)
+			{
+				LogFormatted_DebugOnly("not ready yet");
+				AppLauncherToBeSetTrueAttemptDate = DateTime.Now;
+				return;
+			}
+			ApplicationLauncherButton ButtonToToggle = btnAppLauncher;
+
+			if (ButtonToToggle == null)
+			{
+				LogFormatted_DebugOnly("Button Is Null");
+				AppLauncherToBeSetTrueAttemptDate = DateTime.Now;
+				return;
+			}
+
+		}
+
+		void onAppLaunchToggleOn()
+		{
+			MonoBehaviourExtended.LogFormatted_DebugOnly("TOn");
+
+			EditorWindowVisible = true;
+			MonoBehaviourExtended.LogFormatted_DebugOnly("{0}", EditorWindowVisible);
+		}
+		void onAppLaunchToggleOff()
+		{
+			MonoBehaviourExtended.LogFormatted_DebugOnly("TOff");
+
+			EditorWindowVisible = false;
+			MonoBehaviourExtended.LogFormatted_DebugOnly("{0}", EditorWindowVisible);
+		}
+		void onAppLaunchHoverOn()
+		{
+			MonoBehaviourExtended.LogFormatted_DebugOnly("HovOn");
+			//MouseOverAppLauncherBtn = true;
+		}
+		void onAppLaunchHoverOff()
+		{
+			MonoBehaviourExtended.LogFormatted_DebugOnly("HovOff");
+			//MouseOverAppLauncherBtn = false; 
+		}
+
+		//Destroy Event - when the DLL is loaded
+		internal override void OnDestroy()
+		{
+			LogFormatted("Destroying the KerbalAlarmClock-{0}", MonoName);
+
+			//Hook the App Launcher
+			GameEvents.onGUIApplicationLauncherReady.Remove(OnGUIAppLauncherReady);
+			GameEvents.onGUIApplicationLauncherDestroyed.Remove(DestroyAppLauncherButton);
+			GameEvents.onGameSceneLoadRequested.Remove(OnGameSceneLoadRequestedForAppLauncher);
+
+			GameEvents.onShowUI.Remove(OnShowUI);
+			GameEvents.onHideUI.Remove(OnHideUI);
+
+
+			DestroyAppLauncherButton();
+		}
+
+		private void drawGUI()
+		{
+			windowPos = GUILayout.Window(airshipWindowID, windowPos, WindowGUI, "HLAirships Build Aid", GUILayout.MinWidth(200));
+		}
+
+		protected void initGUI()
+		{
+			windowWidth = 300;
+
+			if ((windowPos.x == 0) && (windowPos.y == 0))
+			{
+				windowPos = new Rect(Screen.width - windowWidth, Screen.height * 0.25f, 10, 10);
+			}
+		}
+
+		// GUI
+		private void WindowGUI(int windowID)
+		{
+			// General GUI window information
+			GUIStyle mySty = new GUIStyle(GUI.skin.button);
+			mySty.normal.textColor = mySty.focused.textColor = Color.white;
+			mySty.hover.textColor = mySty.active.textColor = Color.yellow;
+			mySty.onNormal.textColor = mySty.onFocused.textColor = mySty.onHover.textColor = mySty.onActive.textColor = Color.green;
+			mySty.padding = new RectOffset(2, 2, 2, 2);
+
+
+			GUILayout.BeginVertical();
+			GUILayout.Label("Buoyancy on:");
+			currentSelection = GUILayout.SelectionGrid(currentSelection, selString, 1);
+
+			currentBody = BodyRef[currentSelection];
+
+			GUILayout.Label("Envelope Volume: " + TotalEnvelopeVolume);
+
+			string mass = "?";
+			double buoyancy = ComputeMaxBuoyancy();
+			mass = TotalMass.ToString("00.00");
+			// weight
+			double weight = TotalMass * FlightGlobals.Bodies[currentBody].GeeASL * 9.81;
+			double netForce = buoyancy - weight;
+
+			GUILayout.Label("Vessel Mass: " + mass + "T");
+
+			GUILayout.Label("Net Buoyancy: " + netForce.ToString("00.00") + "KN");
+
+			try
+			{
+				if (buoyancy > 0)
+				{
+					float tippingPoint = 0f;
+					Keyframe[] frames = null;
+					float maxAltitude = 100000;
+					int frameIndex = 0;
+					bool useCurve = true;
+					if(useCurve)
+					{
+						frames = FlightGlobals.Bodies[currentBody].atmosphereTemperatureCurve.Curve.keys;
+						maxAltitude = frames[frames.Length - 1].time;
+					}
+					// compute equilibrium altitude
+					for (float i = 100f; i < maxAltitude; i += 100f)
+					{
+						double pressure = FlightGlobals.Bodies[currentBody].GetPressure(i);
+
+						// Compute the buoyant force
+
+						// KSP provides the density based on local atmospheric pressure.
+						double atmosDensity = pressure / (287.058 * FlightGlobals.Bodies[currentBody].atmosphereTemperatureSeaLevel);
+						if(useCurve)
+						{
+							// walk the curve forward if needed
+							if (frameIndex < frames.Length - 1 && i > frames[frameIndex + 1].time)
+							{
+								frameIndex++;
+							}
+							// linear interpolation is close enough for now
+							float tempCurve = ((i - frames[frameIndex].time) / (frames[frameIndex + 1].time - frames[frameIndex].time)) * (frames[frameIndex + 1].value - frames[frameIndex].value) + frames[frameIndex].value;
+							atmosDensity = pressure / (287.058 * tempCurve);
+						}
+
+						// The maximum buoyancy of the envelope is equal to the weight of the displaced air
+						// Force (Newtons) = - Gravitational Acceleration (meters per second squared) * Density (kilograms / meter cubed) * Volume (meters cubed)
+						double maxBuoyancy = FlightGlobals.Bodies[currentBody].GeeASL * 9.81 * atmosDensity * TotalEnvelopeVolume;
+						// Then we apply the "volume scale", for gameplay purposes if needed.
+						maxBuoyancy *= EnvelopeVolumeScale;
+
+						if (maxBuoyancy < weight)
+						{
+							tippingPoint = i;
+							break;
+						}
+					}
+					if (tippingPoint > 0)
+					{
+						GUILayout.Label("Equilibrium Altitude : " + tippingPoint.ToString() + "m");
+					}
+				}
+			}
+			catch(Exception ex)
+			{
+				GUILayout.Label("Equilibrium Altitude : Unknown");
+			}
+
+			GUILayout.EndVertical();
+
+
+			GUI.DragWindow(new Rect(0, 0, 500, 20));
+		}
+
+		private double ComputeMaxBuoyancy()
+		{
+			double pressure = FlightGlobals.Bodies[currentBody].atmospherePressureSeaLevel;
+
+			// Compute the buoyant force
+
+			// KSP provides the density based on local atmospheric pressure.
+			double atmosDensity = FlightGlobals.Bodies[currentBody].atmDensityASL;  //FlightGlobals.getAtmDensity(pressure, FlightGlobals.Bodies[REF_BODY_KERBIN].atmosphereTemperatureSeaLevel);
+
+			// The maximum buoyancy of the envelope is equal to the weight of the displaced air
+			// Force (Newtons) = - Gravitational Acceleration (meters per second squared) * Density (kilograms / meter cubed) * Volume (meters cubed)
+			double maxBuoyancy = FlightGlobals.Bodies[currentBody].GeeASL * 9.81 * atmosDensity * TotalEnvelopeVolume;
+			// As force in KSP is measured in kilonewtons, we divide by 1000
+			maxBuoyancy /= 1000;
+			// Then we apply the "volume scale", for gameplay purposes if needed.
+			maxBuoyancy *= EnvelopeVolumeScale;
+
+
+			return maxBuoyancy;
+		}
+	}
+
+}

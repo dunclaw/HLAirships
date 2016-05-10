@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using KSPPluginFramework;
 
-namespace HLAirshipRedux
+namespace HLAirships
 {
 	internal static class LoadingUtilities
 	{

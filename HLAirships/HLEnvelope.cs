@@ -10,7 +10,7 @@ using KSP;
 using System.Linq;
 
 
-namespace HLAirshipRedux
+namespace HLAirships
 {
 
 	public enum AnimationState : int
@@ -337,7 +337,22 @@ namespace HLAirshipRedux
 			else
 				// Start opened if it is buoyant
 				animationState = 2;
+
+			this.part.OnEditorAttach += OnEditorAttach;
+			this.part.OnEditorDetach += OnEditorDetach;
 		}
+		public override void OnSave(ConfigNode node)
+		{
+			base.OnSave(node);
+			if (HLBuildAidWindow.Instance != null && part.parent != null)
+			{
+				float treeVolume = 0;
+				HLBuildAidWindow.Instance.TotalMass = FindTotalMass(this.part, out treeVolume);
+				HLBuildAidWindow.Instance.TotalEnvelopeVolume = treeVolume;
+				HLBuildAidWindow.Instance.EnvelopeVolumeScale = envelopeVolumeScale;
+			}
+		}
+
 
 		public override void OnUpdate()
 		{
@@ -357,6 +372,54 @@ namespace HLAirshipRedux
 			// Try to animate if there is no animation
 			if (envelopeHasAnimation)
 				animateEnvelope();
+		}
+
+		private void OnEditorAttach()
+		{
+			if(HLBuildAidWindow.Instance != null)
+			{
+				float treeVolume = 0;
+				HLBuildAidWindow.Instance.TotalMass = FindTotalMass(this.part, out treeVolume);
+				HLBuildAidWindow.Instance.TotalEnvelopeVolume = treeVolume;
+			}
+		}
+
+		private void OnEditorDetach()
+		{
+			if (HLBuildAidWindow.Instance != null)
+			{
+				float treeVolume = 0;
+				HLBuildAidWindow.Instance.TotalMass = FindTotalMass(this.part, out treeVolume);
+				HLBuildAidWindow.Instance.TotalEnvelopeVolume = treeVolume;
+			}
+		}
+
+		private static float FindTotalMass(Part part, out float envelopeVolume)
+		{
+			envelopeVolume = 0;
+			Part rootPart = part;
+			while(rootPart.parent != null)
+			{
+				rootPart = rootPart.parent;
+			}
+			return FindMassTree(rootPart, ref envelopeVolume);
+		}
+
+		private static float FindMassTree(Part part, ref float envelopeVolume)
+		{
+			float mass = part.mass + part.GetResourceMass();
+			var envelope = part.Modules.OfType<HLEnvelopePartModule>().FirstOrDefault();
+			if (envelope != null)
+			{
+				// TODO put envelope scaling here
+				envelopeVolume += envelope.envelopeVolume;
+			}
+			// recurse children
+			foreach (Part childPart in part.children)
+			{
+				mass += FindMassTree(childPart, ref envelopeVolume);
+			}
+			return mass;
 		}
 
 		public void animateEnvelope()
@@ -930,8 +993,25 @@ namespace HLAirshipRedux
 				}
 			}
 
+			// TODO - scale anguglar drag based on volume
+			this.part.angularDrag = envelopeVolume / 10.0f;
 			// New method is to add force based on render bounds.
 			this.part.Rigidbody.AddForceAtPosition(buoyantForce, part.WCoM, ForceMode.Force);
+			// limit angular velocity to avoid dangerous occilations
+			if (buoyantForce.magnitude > 30)
+			{
+				this.part.Rigidbody.angularDrag = 1.0f;
+				this.part.Rigidbody.maxAngularVelocity = 1.0f;
+			}
+			if (part.Splashed || part.WaterContact)
+			{
+				//part.waterAngularDragMultiplier
+				this.part.Rigidbody.angularDrag = 5.1f;
+				this.part.Rigidbody.maxDepenetrationVelocity = 10;
+				this.part.Rigidbody.maxAngularVelocity = 0.5f;
+				// TODO - reduce force based on water penetration to avoid double counting buoyancy
+				float reducedMagnitude = buoyantForce.magnitude - part.buoyancy;
+			}
 
 		}
 

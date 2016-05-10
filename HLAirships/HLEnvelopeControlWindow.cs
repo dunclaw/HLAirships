@@ -7,7 +7,7 @@ using System.ComponentModel;
 using KSP.UI;
 using KSP.UI.Screens;
 
-namespace HLAirshipRedux
+namespace HLAirships
 {
 	[KSPAddon(KSPAddon.Startup.Flight, false)]
 	public class HLEnvelopeControlWindowFlight : HLEnvelopeControlWindow
