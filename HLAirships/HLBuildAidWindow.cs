@@ -327,7 +327,7 @@ namespace HLAirships
 					}
 				}
 			}
-			catch(Exception ex)
+			catch(Exception)
 			{
 				GUILayout.Label("Equilibrium Altitude : Unknown");
 			}

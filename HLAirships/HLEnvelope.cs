@@ -70,8 +70,8 @@ namespace HLAirships
 		public float targetVerticalVelocity = 0f;
 		[KSPField(isPersistant = true, guiActive = false, guiName = "Make Stationary")]
 		private bool togglePersistenceControl = false;
-		// [KSPField(isPersistant = true, guiActive = true, guiName = "Manual Pitch Control")]
-		// public bool toggleManualPitch = false;
+		[KSPField(isPersistant = true, guiActive = true, guiName = "Manual Pitch Control")]
+		public bool toggleManualPitch = false;
 		[KSPField(isPersistant = true, guiActive = false, guiName = "Automatic Pitch Control")]
 		public bool toggleAutoPitch = false;
 		[KSPField(isPersistant = true, guiActive = false, guiName = "Auto Pitch Adjust", guiFormat = "F5")]
@@ -601,6 +601,8 @@ namespace HLAirships
 				}
 				targetVerticalVelocity = HLEnvelopeControlWindow.Instance.TargetVerticalVelocity;
 				toggleAutoPitch = HLEnvelopeControlWindow.Instance.ToggleAutoPitch;
+				toggleManualPitch = HLEnvelopeControlWindow.Instance.ToggleManualPitch;
+				symmetricalPitch = HLEnvelopeControlWindow.Instance.SymmetricalPitch;
 				togglePersistenceControl = HLEnvelopeControlWindow.Instance.TogglePersistenceControl;
 				stabilizeDirection = HLEnvelopeControlWindow.Instance.StabilizeDirection;
 				stabilizeInvert = HLEnvelopeControlWindow.Instance.StabilizeInvert;
@@ -623,6 +625,8 @@ namespace HLAirships
 				HLEnvelopeControlWindow.Instance.TargetVerticalVelocity = targetVerticalVelocity;
 				HLEnvelopeControlWindow.Instance.ToggleAltitudeControl = toggleAltitudeControl;
 				HLEnvelopeControlWindow.Instance.ToggleAutoPitch = toggleAutoPitch;
+				HLEnvelopeControlWindow.Instance.ToggleManualPitch = toggleManualPitch;
+				HLEnvelopeControlWindow.Instance.SymmetricalPitch = symmetricalPitch;
 				HLEnvelopeControlWindow.Instance.TogglePersistenceControl = togglePersistenceControl;
 				HLEnvelopeControlWindow.Instance.StabilizeDirection = stabilizeDirection;
 				HLEnvelopeControlWindow.Instance.StabilizeInvert = stabilizeInvert;
@@ -688,7 +692,7 @@ namespace HLAirships
 					totalBuoyancy += envelope.buoyantForce.magnitude;
 					totalBuoyancyMax += envelope.maxBuoyancy.magnitude;
 
-					/*
+				
 					// Legacy pitch control
 					if (envelope.eDistanceFromCoM > 0)
 					{
@@ -702,7 +706,7 @@ namespace HLAirships
 						totalBuoyancyMaxN += envelope.maxBuoyancy.magnitude;
 						totalTorqueMaxN += envelope.maxBuoyancy.magnitude * envelope.eDistanceFromCoM * -1;
 					}
-					 */
+					
 
 				}
 
@@ -768,17 +772,23 @@ namespace HLAirships
 				// Balance out pitches to 0
 				if (symmetricalPitch) envelope.targetPitchBuoyancy -= sumPitch / Envelopes.Count;
 
-				// if(toggleManualPitch)
-				// envelope.targetPitchBuoyancy = manualPitchControl(envelope.targetBoyantForceFractionCompressor, envelope.eDistanceFromCoM);
-				// else
-				// if (toggleAutoPitch) envelope.targetPitchBuoyancy += autoPitchControl(part.rigidbody.worldCenterOfMass, envelope);
-				/*
+				if (toggleManualPitch)
+				{
+					envelope.targetPitchBuoyancy = manualPitchControl(envelope.targetBuoyantVessel, envelope.eDistanceFromCoM);
+				}
 				else
 				{
-					envelope.targetPitchBuoyancy = 0;
-					envelope.autoTarget = 0;
+					if (toggleAutoPitch)
+					{
+						envelope.targetPitchBuoyancy += autoPitchControl(part.WCoM, envelope);
+					}
+					else
+					{
+						envelope.targetPitchBuoyancy = 0;
+						envelope.autoTarget = 0;
+					}
 				}
-				 */
+				
 
 				Mathf.Clamp01(envelope.targetPitchBuoyancy);
 
@@ -787,15 +797,21 @@ namespace HLAirships
 			}
 		}
 
-		/*
+		
 		public float manualPitchControl(float target, float distance)
 		{
 			// Envelopes in front and back are separately affected by pitch controls
-			if (distance > 0) target = targetBuoyancyP * eDistanceFromCoM;
-			else target = targetBuoyancyN * eDistanceFromCoM;
+			if (distance > 0)
+			{
+				target = targetBuoyancyP * eDistanceFromCoM;
+			}
+			else
+			{
+				target = targetBuoyancyN * eDistanceFromCoM;
+			}
 			return target;
 		}
-		*/
+		
 
 		public float autoPitchControl(Vector3 position, HLEnvelopePartModule envelope)
 		{
@@ -830,7 +846,9 @@ namespace HLAirships
 
 			// Pitch angle
 			if (pitchAngle < 0)
+			{
 				pitchVector *= -1;
+			}
 
 			// Slerp (yummy!) is a spherical rotation of a vector towards something
 			stabilizeVector = Vector3.Slerp(stabilizeVector, pitchVector, Mathf.Abs(pitchAngle) / 90);
@@ -861,13 +879,18 @@ namespace HLAirships
 				// Project correction onto relative position to get correction amount
 				envelope.autoTarget = Vector3.Dot(correctVector / 1000, positionVector);
 			}
-			else envelope.autoTarget = 0;
+			else
+			{
+				envelope.autoTarget = 0;
+			}
 			// Save this rotation
 			previousRotation = rotation;
 
 			// Do not send small adjustments
 			if (envelope.autoTarget < 0.0001)
+			{
 				envelope.autoTarget = 0;
+			}
 
 			if (displayHologram)
 			{

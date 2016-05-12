@@ -50,6 +50,8 @@ namespace HLAirships
 		public float TargetVerticalVelocity { get; set; }
 		public bool ToggleAltitudeControl { get; set; }
 		public bool ToggleAutoPitch { get; set; }
+		public bool ToggleManualPitch { get; set; }
+		public bool SymmetricalPitch { get; set; }
 		public float TotalBuoyancy { get; set; }
 		public Vessel CurrentVessel { get; set; }
 		public float MakeStationarySpeedMax { get; set; }
@@ -57,6 +59,7 @@ namespace HLAirships
 		public Vector3 MaxBuoyancy { get; set; }
 		public HLEnvelopePartModule.Direction StabilizeDirection { get; set; }
 		public bool StabilizeInvert { get; set; }
+		public float StabilizeMultiplier { get; set; }
 		public float PitchAngle { get; set; }
 		public bool DisplayHologram { get; set; }
 		public float LineOffsetMultiplier { get; set; }
@@ -386,36 +389,54 @@ namespace HLAirships
 			#region Toggle Pitch
 			if (Envelopes.Count > 1)
 			{
-				/*
+				
 				GUILayout.BeginHorizontal();
-				// if (toggleAutoPitch) toggleManualPitch = false;
+				if (ToggleAutoPitch)
+				{
+					ToggleManualPitch = false;
+				}
 				string toggleManualPitchString = "Manual Pitch Off";
-				if (toggleManualPitch) toggleManualPitchString = "Manual Pitch On";
-				toggleManualPitch = GUILayout.Toggle(toggleManualPitch, toggleManualPitchString);
+				if (ToggleManualPitch)
+				{
+					toggleManualPitchString = "Manual Pitch On";
+				}
+				ToggleManualPitch = GUILayout.Toggle(ToggleManualPitch, toggleManualPitchString);
 				GUILayout.EndHorizontal();
-				*/
+				
 
-				// As Auto Pitch is not working, it has been commented out
-
-				/*
 				GUILayout.BeginHorizontal();
-				// if (toggleManualPitch) toggleAutoPitch = false;
+				if (ToggleManualPitch)
+				{
+					ToggleAutoPitch = false;
+				}
 				string symmetricalPitchString = "Symetrical Pitch Off";
-				if (symmetricalPitch) symmetricalPitchString = "Symetrical Pitch On";
-				symmetricalPitch = GUILayout.Toggle(symmetricalPitch, symmetricalPitchString);
+				if (SymmetricalPitch)
+				{
+					symmetricalPitchString = "Symetrical Pitch On";
+				}
+				SymmetricalPitch = GUILayout.Toggle(SymmetricalPitch, symmetricalPitchString);
 				GUILayout.EndHorizontal();
 
-				if (symmetricalPitch)
+				if (SymmetricalPitch)
 				{
 					GUILayout.BeginHorizontal();
-					// if (toggleManualPitch) toggleAutoPitch = false;
+					if (ToggleManualPitch)
+					{
+						ToggleAutoPitch = false;
+					}
 					string toggleAutoPitchString = "Auto Pitch Off";
-					if (toggleAutoPitch) toggleAutoPitchString = "Auto Pitch On";
-					toggleAutoPitch = GUILayout.Toggle(toggleAutoPitch, toggleAutoPitchString);
+					if (ToggleAutoPitch)
+					{
+						toggleAutoPitchString = "Auto Pitch On";
+					}
+					ToggleAutoPitch = GUILayout.Toggle(ToggleAutoPitch, toggleAutoPitchString);
 					GUILayout.EndHorizontal();
 				}
-				else toggleAutoPitch = false;
-				 */
+				else
+				{
+					ToggleAutoPitch = false;
+				}
+				
 			}
 			#endregion
 
@@ -453,20 +474,34 @@ namespace HLAirships
 			if (ToggleAutoPitch)
 			{
 				willReset2 = true;
-				/*
-				string stabilizeStrengthString = stabilizeMultiplier.ToString("0.00");
-				if (stabilizeInvert) stabilizeStrengthString = "-" + stabilizeMultiplier.ToString("0.00");
+				
+				string stabilizeStrengthString = StabilizeMultiplier.ToString("0.00");
+				if (StabilizeInvert)
+				{
+					stabilizeStrengthString = "-" + StabilizeMultiplier.ToString("0.00");
+				}
 				if (GUILayout.Button("Stabilizing Strength " + stabilizeStrengthString))
-					stabilizeMultiplier = 1f;
-				stabilizeMultiplier = GUILayout.HorizontalSlider(stabilizeMultiplier, 0.1f, 10f);
-				stabilizeInvert = GUILayout.Toggle(stabilizeInvert, "Invert Direction");
-				 */
+				{
+					StabilizeMultiplier = 1f;
+				}
+				StabilizeMultiplier = GUILayout.HorizontalSlider(StabilizeMultiplier, 0.1f, 10f);
+				StabilizeInvert = GUILayout.Toggle(StabilizeInvert, "Invert Direction");
+				 
 
 				// Pitch angle setting
 				GUILayout.BeginHorizontal();
-				if (GUILayout.Button("-")) PitchAngle -= 1f;
-				if (GUILayout.Button("Pitch Angle " + PitchAngle.ToString("0"))) PitchAngle = 0f;
-				if (GUILayout.Button("+")) PitchAngle += 1f;
+				if (GUILayout.Button("-"))
+				{
+					PitchAngle -= 1f;
+				}
+				if (GUILayout.Button("Pitch Angle " + PitchAngle.ToString("0")))
+				{
+					PitchAngle = 0f;
+				}
+				if (GUILayout.Button("+"))
+				{
+					PitchAngle += 1f;
+				}
 				GUILayout.EndHorizontal();
 
 				PitchAngle = GUILayout.HorizontalSlider(PitchAngle, -90f, 90f);
