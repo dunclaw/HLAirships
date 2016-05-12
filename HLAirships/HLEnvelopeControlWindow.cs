@@ -60,6 +60,9 @@ namespace HLAirships
 		public float PitchAngle { get; set; }
 		public bool DisplayHologram { get; set; }
 		public float LineOffsetMultiplier { get; set; }
+		public bool AnchorPresent { get; set; }
+		public bool AnchorOn { get; set; }
+		public bool AutoAnchor { get; set; }
 
 		public List<HLEnvelopePartModule> Envelopes = new List<HLEnvelopePartModule>();
 
@@ -252,7 +255,7 @@ namespace HLAirships
 
 		private void drawGUI()
 		{
-			windowPos = GUILayout.Window(airshipWindowID, windowPos, WindowGUI, "HooliganLabs", GUILayout.MinWidth(200));
+			windowPos = GUILayout.Window(airshipWindowID, windowPos, WindowGUI, "HLAirships", GUILayout.MinWidth(200));
 		}
 
 		protected void initGUI()
@@ -543,6 +546,17 @@ namespace HLAirships
 			*/
 			#endregion
 
+			if (AnchorPresent)
+			{
+				GUILayout.BeginHorizontal();
+				string toggleAnchor = "Anchor Inactive";
+				if (AnchorOn) toggleAnchor = "Anchor Active";
+				AnchorOn = GUILayout.Toggle(AnchorOn, toggleAnchor);
+				string toggleAutoAnchor = "Auto Anchor Off";
+				if (AutoAnchor) toggleAutoAnchor = "Auto Anchor On";
+				AutoAnchor = GUILayout.Toggle(AutoAnchor, toggleAutoAnchor);
+				GUILayout.EndHorizontal();
+			}
 
 			if (resetGUIsize)
 			{
@@ -629,12 +643,12 @@ namespace HLAirships
 			try
 			{
 				LogFormatted("Initialising the Toolbar Icon");
-				btnReturn = ToolbarManager.Instance.add("HooliganLabs", "HooliganLabsGUI");
-				btnReturn.TexturePath = "HooliganLabs/Icons/HLOffIcon";
-				btnReturn.ToolTip = "HooliganLabs";
+				btnReturn = ToolbarManager.Instance.add("HLAirships", "HLAirshipsGUI");
+				btnReturn.TexturePath = "HLAirships/Icons/HLOffIcon";
+				btnReturn.ToolTip = "HLAirships";
 				btnReturn.OnClick += (e) =>
 				{
-					btnReturn.TexturePath = ControlWindowVisible ? "HooliganLabs/Icons/HLOffIcon" : "HooliganLabs/Icons/HLOnIcon";
+					btnReturn.TexturePath = ControlWindowVisible ? "HLAirships/Icons/HLOffIcon" : "HLAirships/Icons/HLOnIcon";
 					ControlWindowVisible = !ControlWindowVisible;
 				};
 			}

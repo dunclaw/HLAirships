@@ -8,7 +8,7 @@ namespace HLAirships
 	internal static class LoadingUtilities
 	{
 		internal static String PathApp = KSPUtil.ApplicationRootPath.Replace("\\", "/");
-		internal static String PathModInstall = string.Format("{0}GameData/HooliganLabs", PathApp);
+		internal static String PathModInstall = string.Format("{0}GameData/HLAirships", PathApp);
 
 		internal static String PathPlugin = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 		internal static String PathToolbarIcons = string.Format("{0}/Icons", PathModInstall);

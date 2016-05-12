@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AirshipResources.cs" />
+    <Compile Include="AnchorModule.cs" />
     <Compile Include="HLBuildAidWindow.cs" />
     <Compile Include="HLEnvelope.cs" />
     <Compile Include="HLEnvelopeControlWindow.cs" />
@@ -63,11 +64,11 @@
   <PropertyGroup>
     <PostBuildEvent>"D:\Code\pdb2mdb\pdb2mdb.exe" "$(TargetFileName)"
 
-xcopy /Y "$(TargetPath)" "C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\GameData\HooliganLabs\Plugins\"
+xcopy /Y "$(TargetPath)" "C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\GameData\HLAirships\Plugins\"
 
-xcopy /Y "$(TargetDir)$(TargetName).pdb" "C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\GameData\HooliganLabs\Plugins\"
+xcopy /Y "$(TargetDir)$(TargetName).pdb" "C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\GameData\HLAirships\Plugins\"
 
-xcopy /Y "$(TargetDir)$(TargetName).dll.mdb" "C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\GameData\HooliganLabs\Plugins\"</PostBuildEvent>
+xcopy /Y "$(TargetDir)$(TargetName).dll.mdb" "C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\GameData\HLAirships\Plugins\"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
