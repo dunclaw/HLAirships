@@ -53,8 +53,9 @@ namespace HLAirships
 		public const int REF_BODY_POL = 14;
 		public const int REF_BODY_DRES = 15;
 		public const int REF_BODY_EELOO = 16;
-		public string[] selString = new string[] { "Kerbin", "Eve", "Duna", "Jool", "Laythe" };
-		public int[] BodyRef = new int[] { REF_BODY_KERBIN, REF_BODY_EVE, REF_BODY_DUNA, REF_BODY_JOOL, REF_BODY_LAYTHE };
+		public List<string> selString = new List<string>();
+		public string[] selStringArray;
+		public List<int> BodyRef = new List<int>();
 		public int currentSelection = 0;
 
 		internal override void Awake()
@@ -71,6 +72,15 @@ namespace HLAirships
 		private void InitVariables()
 		{
 			airshipWindowID = UnityEngine.Random.Range(1000, 2000000) + _AssemblyName.GetHashCode();
+			for(int i = 0; i < FlightGlobals.Bodies.Count; i++)
+			{
+				if(FlightGlobals.Bodies[i].atmosphere)
+				{
+					selString.Add(FlightGlobals.Bodies[i].name);
+					BodyRef.Add(i);
+				}
+			}
+			selStringArray = selString.ToArray();
 		}
 
 		private void OnShowUI()
@@ -257,7 +267,7 @@ namespace HLAirships
 
 			GUILayout.BeginVertical();
 			GUILayout.Label("Buoyancy on:");
-			currentSelection = GUILayout.SelectionGrid(currentSelection, selString, 1);
+			currentSelection = GUILayout.SelectionGrid(currentSelection, selStringArray, 1);
 
 			currentBody = BodyRef[currentSelection];
 
@@ -276,7 +286,7 @@ namespace HLAirships
 
 			try
 			{
-				if (buoyancy > 0)
+				if (netForce > 0)
 				{
 					float tippingPoint = 0f;
 					Keyframe[] frames = null;
@@ -325,6 +335,10 @@ namespace HLAirships
 					{
 						GUILayout.Label("Equilibrium Altitude : " + tippingPoint.ToString() + "m");
 					}
+				}
+				else
+				{
+					GUILayout.Label("Equilibrium Altitude : Won't Fly");
 				}
 			}
 			catch(Exception ex)
