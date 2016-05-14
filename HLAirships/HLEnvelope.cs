@@ -338,9 +338,8 @@ namespace HLAirships
 				// Start opened if it is buoyant
 				animationState = 2;
 
-			this.part.OnEditorAttach += OnEditorAttach;
-			this.part.OnEditorDetach += OnEditorDetach;
 		}
+
 		public override void OnSave(ConfigNode node)
 		{
 			base.OnSave(node);
@@ -349,7 +348,6 @@ namespace HLAirships
 				float treeVolume = 0;
 				HLBuildAidWindow.Instance.TotalMass = FindTotalMass(this.part, out treeVolume);
 				HLBuildAidWindow.Instance.TotalEnvelopeVolume = treeVolume;
-				HLBuildAidWindow.Instance.EnvelopeVolumeScale = envelopeVolumeScale;
 			}
 		}
 
@@ -375,27 +373,7 @@ namespace HLAirships
 		}
 
 
-		private void OnEditorAttach()
-		{
-			if(HLBuildAidWindow.Instance != null)
-			{
-				float treeVolume = 0;
-				HLBuildAidWindow.Instance.TotalMass = FindTotalMass(this.part, out treeVolume);
-				HLBuildAidWindow.Instance.TotalEnvelopeVolume = treeVolume;
-			}
-		}
-
-		private void OnEditorDetach()
-		{
-			if (HLBuildAidWindow.Instance != null)
-			{
-				float treeVolume = 0;
-				HLBuildAidWindow.Instance.TotalMass = FindTotalMass(this.part, out treeVolume);
-				HLBuildAidWindow.Instance.TotalEnvelopeVolume = treeVolume;
-			}
-		}
-
-		private static float FindTotalMass(Part part, out float envelopeVolume)
+		internal static float FindTotalMass(Part part, out float envelopeVolume)
 		{
 			envelopeVolume = 0;
 			Part rootPart = part;
@@ -412,8 +390,7 @@ namespace HLAirships
 			var envelope = part.Modules.OfType<HLEnvelopePartModule>().FirstOrDefault();
 			if (envelope != null)
 			{
-				// TODO put envelope scaling here
-				envelopeVolume += envelope.envelopeVolume;
+				envelopeVolume += envelope.envelopeVolume * envelope.envelopeVolumeScale;
 			}
 			// recurse children
 			foreach (Part childPart in part.children)
