@@ -374,6 +374,7 @@ namespace HLAirships
 				animateEnvelope();
 		}
 
+
 		private void OnEditorAttach()
 		{
 			if(HLBuildAidWindow.Instance != null)
@@ -770,7 +771,10 @@ namespace HLAirships
 				envelope.targetBuoyantVessel = this.targetBuoyantVessel;
 
 				// Balance out pitches to 0
-				if (symmetricalPitch) envelope.targetPitchBuoyancy -= sumPitch / Envelopes.Count;
+				if (symmetricalPitch)
+				{
+					envelope.targetPitchBuoyancy -= sumPitch / Envelopes.Count;
+				}
 
 				if (toggleManualPitch)
 				{
@@ -780,7 +784,7 @@ namespace HLAirships
 				{
 					if (toggleAutoPitch)
 					{
-						envelope.targetPitchBuoyancy += autoPitchControl(part.WCoM, envelope);
+						envelope.targetPitchBuoyancy = autoPitchControl(part.WCoM, envelope);
 					}
 					else
 					{
