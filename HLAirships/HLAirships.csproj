@@ -62,7 +62,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"D:\Code\pdb2mdb\pdb2mdb.exe" "$(TargetFileName)"
+    <PostBuildEvent>"$(TargetDir)\..\..\..\..\..\pdb2mdb\pdb2mdb.exe" "$(TargetFileName)"
 
 xcopy /Y "$(TargetPath)" "C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\GameData\HLAirships\Plugins\"
 
