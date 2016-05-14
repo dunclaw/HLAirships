@@ -27,8 +27,6 @@ namespace HLAirships
 		public float TotalEnvelopeVolume { get; set; }
 		public float TotalMass { get; set; }
 
-		// TODO remove envelope scaling from here
-		public float EnvelopeVolumeScale { get; set; }
 
 		private Rect windowPos;
 		private int airshipWindowID;
@@ -38,21 +36,6 @@ namespace HLAirships
 
 		public const int REF_BODY_KERBOL = 0;
 		public const int REF_BODY_KERBIN = 1;
-		public const int REF_BODY_MUN = 2;
-		public const int REF_BODY_MINMUS = 3;
-		public const int REF_BODY_MOHO = 4;
-		public const int REF_BODY_EVE = 5;
-		public const int REF_BODY_DUNA = 6;
-		public const int REF_BODY_IKE = 7;
-		public const int REF_BODY_JOOL = 8;
-		public const int REF_BODY_LAYTHE = 9;
-		public const int REF_BODY_VALL = 10;
-		public const int REF_BODY_BOP = 11;
-		public const int REF_BODY_TYLO = 12;
-		public const int REF_BODY_GILLY = 13;
-		public const int REF_BODY_POL = 14;
-		public const int REF_BODY_DRES = 15;
-		public const int REF_BODY_EELOO = 16;
 		public List<string> selString = new List<string>();
 		public string[] selStringArray;
 		public List<int> BodyRef = new List<int>();
@@ -81,6 +64,29 @@ namespace HLAirships
 				}
 			}
 			selStringArray = selString.ToArray();
+			// default to the non-sun option
+			if(selStringArray.Length > 1)
+			{
+				currentSelection = 1;
+			}
+			GameEvents.onEditorShipModified.Add(OnShipModified);
+		}
+		private void OnShipModified(ShipConstruct sc)
+		{
+			if (HLBuildAidWindow.Instance != null && sc.Parts != null)
+			{
+				if (sc.Parts.Count > 0)
+				{
+					float treeVolume = 0;
+					TotalMass = HLEnvelopePartModule.FindTotalMass(sc.Parts[0], out treeVolume);
+					HLBuildAidWindow.Instance.TotalEnvelopeVolume = treeVolume;
+				}
+				else
+				{
+					TotalMass = 0;
+					TotalEnvelopeVolume = 0;
+				}
+			}
 		}
 
 		private void OnShowUI()
@@ -322,8 +328,6 @@ namespace HLAirships
 						// The maximum buoyancy of the envelope is equal to the weight of the displaced air
 						// Force (Newtons) = - Gravitational Acceleration (meters per second squared) * Density (kilograms / meter cubed) * Volume (meters cubed)
 						double maxBuoyancy = FlightGlobals.Bodies[currentBody].GeeASL * 9.81 * atmosDensity * TotalEnvelopeVolume;
-						// Then we apply the "volume scale", for gameplay purposes if needed.
-						maxBuoyancy *= EnvelopeVolumeScale;
 
 						if (maxBuoyancy < weight)
 						{
@@ -341,7 +345,7 @@ namespace HLAirships
 					GUILayout.Label("Equilibrium Altitude : Won't Fly");
 				}
 			}
-			catch(Exception ex)
+			catch(Exception)
 			{
 				GUILayout.Label("Equilibrium Altitude : Unknown");
 			}
@@ -366,8 +370,6 @@ namespace HLAirships
 			double maxBuoyancy = FlightGlobals.Bodies[currentBody].GeeASL * 9.81 * atmosDensity * TotalEnvelopeVolume;
 			// As force in KSP is measured in kilonewtons, we divide by 1000
 			maxBuoyancy /= 1000;
-			// Then we apply the "volume scale", for gameplay purposes if needed.
-			maxBuoyancy *= EnvelopeVolumeScale;
 
 
 			return maxBuoyancy;
