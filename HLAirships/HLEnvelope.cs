@@ -340,7 +340,9 @@ namespace HLAirships
 
 			this.part.OnEditorAttach += OnEditorAttach;
 			this.part.OnEditorDetach += OnEditorDetach;
+
 		}
+
 		public override void OnSave(ConfigNode node)
 		{
 			base.OnSave(node);
@@ -770,7 +772,7 @@ namespace HLAirships
 				envelope.targetBuoyantVessel = this.targetBuoyantVessel;
 
 				// Balance out pitches to 0
-				if (symmetricalPitch) envelope.targetPitchBuoyancy -= sumPitch / Envelopes.Count;
+				//if (symmetricalPitch) envelope.targetPitchBuoyancy -= sumPitch / Envelopes.Count;
 
 				if (toggleManualPitch)
 				{
