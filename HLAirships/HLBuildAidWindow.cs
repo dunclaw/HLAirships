@@ -27,8 +27,6 @@ namespace HLAirships
 		public float TotalEnvelopeVolume { get; set; }
 		public float TotalMass { get; set; }
 
-		// TODO remove envelope scaling from here
-		public float EnvelopeVolumeScale { get; set; }
 
 		private Rect windowPos;
 		private int airshipWindowID;
@@ -38,23 +36,9 @@ namespace HLAirships
 
 		public const int REF_BODY_KERBOL = 0;
 		public const int REF_BODY_KERBIN = 1;
-		public const int REF_BODY_MUN = 2;
-		public const int REF_BODY_MINMUS = 3;
-		public const int REF_BODY_MOHO = 4;
-		public const int REF_BODY_EVE = 5;
-		public const int REF_BODY_DUNA = 6;
-		public const int REF_BODY_IKE = 7;
-		public const int REF_BODY_JOOL = 8;
-		public const int REF_BODY_LAYTHE = 9;
-		public const int REF_BODY_VALL = 10;
-		public const int REF_BODY_BOP = 11;
-		public const int REF_BODY_TYLO = 12;
-		public const int REF_BODY_GILLY = 13;
-		public const int REF_BODY_POL = 14;
-		public const int REF_BODY_DRES = 15;
-		public const int REF_BODY_EELOO = 16;
-		public string[] selString = new string[] { "Kerbin", "Eve", "Duna", "Jool", "Laythe" };
-		public int[] BodyRef = new int[] { REF_BODY_KERBIN, REF_BODY_EVE, REF_BODY_DUNA, REF_BODY_JOOL, REF_BODY_LAYTHE };
+		public List<string> selString = new List<string>();
+		public string[] selStringArray;
+		public List<int> BodyRef = new List<int>();
 		public int currentSelection = 0;
 
 		internal override void Awake()
@@ -71,6 +55,38 @@ namespace HLAirships
 		private void InitVariables()
 		{
 			airshipWindowID = UnityEngine.Random.Range(1000, 2000000) + _AssemblyName.GetHashCode();
+			for(int i = 0; i < FlightGlobals.Bodies.Count; i++)
+			{
+				if(FlightGlobals.Bodies[i].atmosphere)
+				{
+					selString.Add(FlightGlobals.Bodies[i].name);
+					BodyRef.Add(i);
+				}
+			}
+			selStringArray = selString.ToArray();
+			// default to the non-sun option
+			if(selStringArray.Length > 1)
+			{
+				currentSelection = 1;
+			}
+			GameEvents.onEditorShipModified.Add(OnShipModified);
+		}
+		private void OnShipModified(ShipConstruct sc)
+		{
+			if (HLBuildAidWindow.Instance != null && sc.Parts != null)
+			{
+				if (sc.Parts.Count > 0)
+				{
+					float treeVolume = 0;
+					TotalMass = HLEnvelopePartModule.FindTotalMass(sc.Parts[0], out treeVolume);
+					HLBuildAidWindow.Instance.TotalEnvelopeVolume = treeVolume;
+				}
+				else
+				{
+					TotalMass = 0;
+					TotalEnvelopeVolume = 0;
+				}
+			}
 		}
 
 		private void OnShowUI()
@@ -257,7 +273,7 @@ namespace HLAirships
 
 			GUILayout.BeginVertical();
 			GUILayout.Label("Buoyancy on:");
-			currentSelection = GUILayout.SelectionGrid(currentSelection, selString, 1);
+			currentSelection = GUILayout.SelectionGrid(currentSelection, selStringArray, 1);
 
 			currentBody = BodyRef[currentSelection];
 
@@ -276,7 +292,7 @@ namespace HLAirships
 
 			try
 			{
-				if (buoyancy > 0)
+				if (netForce > 0)
 				{
 					float tippingPoint = 0f;
 					Keyframe[] frames = null;
@@ -312,8 +328,6 @@ namespace HLAirships
 						// The maximum buoyancy of the envelope is equal to the weight of the displaced air
 						// Force (Newtons) = - Gravitational Acceleration (meters per second squared) * Density (kilograms / meter cubed) * Volume (meters cubed)
 						double maxBuoyancy = FlightGlobals.Bodies[currentBody].GeeASL * 9.81 * atmosDensity * TotalEnvelopeVolume;
-						// Then we apply the "volume scale", for gameplay purposes if needed.
-						maxBuoyancy *= EnvelopeVolumeScale;
 
 						if (maxBuoyancy < weight)
 						{
@@ -325,6 +339,10 @@ namespace HLAirships
 					{
 						GUILayout.Label("Equilibrium Altitude : " + tippingPoint.ToString() + "m");
 					}
+				}
+				else
+				{
+					GUILayout.Label("Equilibrium Altitude : Won't Fly");
 				}
 			}
 			catch(Exception)
@@ -352,8 +370,6 @@ namespace HLAirships
 			double maxBuoyancy = FlightGlobals.Bodies[currentBody].GeeASL * 9.81 * atmosDensity * TotalEnvelopeVolume;
 			// As force in KSP is measured in kilonewtons, we divide by 1000
 			maxBuoyancy /= 1000;
-			// Then we apply the "volume scale", for gameplay purposes if needed.
-			maxBuoyancy *= EnvelopeVolumeScale;
 
 
 			return maxBuoyancy;
