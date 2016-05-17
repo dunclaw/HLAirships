@@ -578,6 +578,16 @@ namespace HLAirships
 					targetBuoyantVessel = HLEnvelopeControlWindow.Instance.TargetBuoyantVessel;
 				}
 				targetVerticalVelocity = HLEnvelopeControlWindow.Instance.TargetVerticalVelocity;
+				if(toggleAutoPitch != HLEnvelopeControlWindow.Instance.ToggleAutoPitch ||
+					symmetricalPitch != HLEnvelopeControlWindow.Instance.SymmetricalPitch ||
+					stabilizeDirection != HLEnvelopeControlWindow.Instance.StabilizeDirection ||
+					stabilizeInvert != HLEnvelopeControlWindow.Instance.StabilizeInvert )
+				{
+					foreach(var envelope in Envelopes)
+					{
+						envelope.targetPitchBuoyancy = 0;
+					}
+				}
 				toggleAutoPitch = HLEnvelopeControlWindow.Instance.ToggleAutoPitch;
 				toggleManualPitch = HLEnvelopeControlWindow.Instance.ToggleManualPitch;
 				symmetricalPitch = HLEnvelopeControlWindow.Instance.SymmetricalPitch;
@@ -788,8 +798,8 @@ namespace HLAirships
 			return target;
 		}
 
-		private float altitudePGain = 1/5000.0f;
-		private float altitudeDGain = 1/1000.0f;
+		private float altitudePGain = 1/12000.0f;
+		private float altitudeDGain = 1/100.0f;
 
 		public float autoPitchControl(Vector3 position, HLEnvelopePartModule envelope, Vector3 vCoM, Vector3 gravity)
 		{
@@ -840,26 +850,26 @@ namespace HLAirships
 
 			// Are we already rotating towards the correct position?
 			float rotation = Vector3.Angle(stabilizeVector, -1 * gravity);
-			if ((previousRotation - rotation) < 0.001)
-			{
+			//if ((envelope.previousRotation - rotation) < 0.001)
+			//{
 				// P Term
 				// Project correction onto relative position to get correction amount
 				envelope.autoTarget = Vector3.Dot(correctVector * altitudePGain, positionVector);
-			}
-			else
-			{
-				envelope.autoTarget = 0;
-			}
+			//}
+			//else
+			//{
+			//	envelope.autoTarget = 0;
+			//}
 
 			// D Term
 			// Adjust for rotation
-			envelope.autoTarget -= Vector3.Dot(correctVector, positionVector) * (rotation - envelope.previousRotation) * altitudeDGain;
+			envelope.autoTarget -= envelope.targetPitchBuoyancy * (rotation - envelope.previousRotation) * altitudeDGain;
 
 			// Save this rotation
 			envelope.previousRotation = rotation;
 
 			// Do not send small adjustments
-			if (Math.Abs(envelope.autoTarget) < 0.0001)
+			if (Math.Abs(envelope.autoTarget) < 0.00005)
 			{
 				envelope.autoTarget = 0;
 			}
