@@ -694,17 +694,6 @@ namespace HLAirships
 					// Debug.Log("Adding GUI!");
 					envelope.isLeadEnvelope = true;
 
-					// Make sure all envelopes have the same logic
-					/*
-					envelope.toggleAltitudeControl = this.toggleAltitudeControl;
-					envelope.targetVerticalVelocity = this.targetVerticalVelocity;
-					envelope.togglePersistenceControl = this.togglePersistenceControl;
-					// envelope.toggleManualPitch = this.toggleManualPitch;
-					envelope.toggleAutoPitch = this.toggleAutoPitch;
-					envelope.pitchAngle = this.pitchAngle;
-					envelope.symmetricalPitch = this.symmetricalPitch;
-					envelope.displayHologram = this.displayHologram;
-					 */
 
 				}// If not, then check to see if this envelope should be promoted to lead envelope
 				else if (!vessel.parts.Contains(leadEnvelope))
@@ -742,16 +731,15 @@ namespace HLAirships
 				sumPitch += envelope.targetPitchBuoyancy;
 			}
 
+			float averagePitch = sumPitch / Envelopes.Count;
+			Vector3 vCoM = vessel.findWorldCenterOfMass();
+			Vector3 gravity = FlightGlobals.getGeeForceAtPosition(vCoM).normalized;
+
 			// The lead envelope sets the buoyancy for every envelope, including itself
 			foreach (HLEnvelopePartModule envelope in Envelopes)
 			{
 				envelope.targetBuoyantVessel = this.targetBuoyantVessel;
 
-				// Balance out pitches to 0
-				if (symmetricalPitch)
-				{
-					envelope.targetPitchBuoyancy -= sumPitch / Envelopes.Count;
-				}
 
 				if (toggleManualPitch)
 				{
@@ -761,7 +749,7 @@ namespace HLAirships
 				{
 					if (toggleAutoPitch)
 					{
-						envelope.targetPitchBuoyancy = autoPitchControl(part.WCoM, envelope);
+						envelope.targetPitchBuoyancy += autoPitchControl(envelope.part.WCoM, envelope, vCoM, gravity);
 					}
 					else
 					{
@@ -769,12 +757,19 @@ namespace HLAirships
 						envelope.autoTarget = 0;
 					}
 				}
-				
 
-				Mathf.Clamp01(envelope.targetPitchBuoyancy);
+
+				envelope.targetPitchBuoyancy = Mathf.Clamp(envelope.targetPitchBuoyancy, -0.25f, 0.25f);
+
+				float adjustBy = envelope.targetPitchBuoyancy;
+				// Balance out pitches to 0
+				if (symmetricalPitch)
+				{
+					adjustBy -= averagePitch;
+				}
 
 				// Use total
-				envelope.updateTargetSpecificVolumeFraction(Mathf.Clamp01(envelope.targetPitchBuoyancy + targetBuoyantVessel), envelope);
+				envelope.updateTargetSpecificVolumeFraction(Mathf.Clamp01(adjustBy + targetBuoyantVessel), envelope);
 			}
 		}
 
@@ -792,9 +787,11 @@ namespace HLAirships
 			}
 			return target;
 		}
-		
 
-		public float autoPitchControl(Vector3 position, HLEnvelopePartModule envelope)
+		private float altitudePGain = 1/5000.0f;
+		private float altitudeDGain = 1/1000.0f;
+
+		public float autoPitchControl(Vector3 position, HLEnvelopePartModule envelope, Vector3 vCoM, Vector3 gravity)
 		{
 			Vector3 stabilizeVector = Vector3.one;
 			Vector3 pitchVector = Vector3.one;
@@ -834,61 +831,55 @@ namespace HLAirships
 			// Slerp (yummy!) is a spherical rotation of a vector towards something
 			stabilizeVector = Vector3.Slerp(stabilizeVector, pitchVector, Mathf.Abs(pitchAngle) / 90);
 
-			// Center of Mass
-			Vector3 theCoM = vessel.findWorldCenterOfMass();
-
 			// Removes vertical component from the vector we are stabilizing to and the envelope's position
-			Vector3 correctVector = ProjectVectorOnPlane(FlightGlobals.getGeeForceAtPosition(theCoM).normalized, stabilizeVector);
+			Vector3 correctVector = ProjectVectorOnPlane(gravity, stabilizeVector);
 
-			Vector3 positionVector = ProjectVectorOnPlane(FlightGlobals.getGeeForceAtPosition(theCoM).normalized, position - vessel.CoM);
+			Vector3 positionVector = ProjectVectorOnPlane(gravity, position - vCoM);
 
-			Vector3 lineOffset = FlightGlobals.getGeeForceAtPosition(theCoM).normalized * -lineOffsetMultiplier;
-
-			// makeLines(linePosition, Color.red);
-			// makeLines(linePositionProjected, Color.green);
-			// makeLines(lineUp, Color.blue);
-			// makeLines(lineUpProjected, Color.magenta);
-			// makeLines(lineGravity, Color.white); }
+			Vector3 lineOffset = gravity * -lineOffsetMultiplier;
 
 			// Are we already rotating towards the correct position?
-			float rotation = Vector3.Angle(stabilizeVector, -1 * FlightGlobals.getGeeForceAtPosition(theCoM).normalized);
+			float rotation = Vector3.Angle(stabilizeVector, -1 * gravity);
 			if ((previousRotation - rotation) < 0.001)
 			{
-				// Adjust for rotation
-				// envelope.autoTarget -= (rotation - previousRotation) / 10;
-
+				// P Term
 				// Project correction onto relative position to get correction amount
-				envelope.autoTarget = Vector3.Dot(correctVector / 1000, positionVector);
+				envelope.autoTarget = Vector3.Dot(correctVector * altitudePGain, positionVector);
 			}
 			else
 			{
 				envelope.autoTarget = 0;
 			}
+
+			// D Term
+			// Adjust for rotation
+			envelope.autoTarget -= Vector3.Dot(correctVector, positionVector) * (rotation - envelope.previousRotation) * altitudeDGain;
+
 			// Save this rotation
-			previousRotation = rotation;
+			envelope.previousRotation = rotation;
 
 			// Do not send small adjustments
-			if (envelope.autoTarget < 0.0001)
+			if (Math.Abs(envelope.autoTarget) < 0.0001)
 			{
 				envelope.autoTarget = 0;
 			}
 
 			if (displayHologram)
 			{
-				envelope.lineGravity.SetPosition(0, theCoM + lineOffset);
-				envelope.lineGravity.SetPosition(1, theCoM + FlightGlobals.getGeeForceAtPosition(theCoM).normalized + lineOffset);
+				envelope.lineGravity.SetPosition(0, vCoM + lineOffset);
+				envelope.lineGravity.SetPosition(1, vCoM + gravity + lineOffset);
 
-				envelope.linePosition.SetPosition(0, theCoM + lineOffset);
-				envelope.linePosition.SetPosition(1, position + lineOffset);
+				envelope.linePosition.SetPosition(0, vCoM + lineOffset);
+				envelope.linePosition.SetPosition(1, envelope.part.WCoM + lineOffset);
 
-				envelope.linePositionProjected.SetPosition(0, theCoM + lineOffset);
-				envelope.linePositionProjected.SetPosition(1, theCoM + positionVector + lineOffset);
+				envelope.linePositionProjected.SetPosition(0, position + lineOffset);
+				envelope.linePositionProjected.SetPosition(1, position + (maxBuoyancy * envelope.targetPitchBuoyancy * 2) + lineOffset);
 
-				envelope.lineCorrect.SetPosition(0, theCoM + lineOffset);
-				envelope.lineCorrect.SetPosition(1, theCoM + stabilizeVector + lineOffset);
+				envelope.lineCorrect.SetPosition(0, vCoM + lineOffset);
+				envelope.lineCorrect.SetPosition(1, vCoM + stabilizeVector * 2.0f + lineOffset);
 
-				envelope.lineCorrectProjected.SetPosition(0, theCoM + lineOffset);
-				envelope.lineCorrectProjected.SetPosition(1, theCoM + correctVector + lineOffset);
+				envelope.lineCorrectProjected.SetPosition(0, vCoM + lineOffset);
+				envelope.lineCorrectProjected.SetPosition(1, vCoM + correctVector + lineOffset);
 			}
 			else
 			{
@@ -901,8 +892,8 @@ namespace HLAirships
 				envelope.linePositionProjected.SetPosition(0, Vector3.zero);
 				envelope.linePositionProjected.SetPosition(1, Vector3.zero);
 
-				envelope.lineCorrect.SetPosition(0, theCoM + Vector3.zero);
-				envelope.lineCorrect.SetPosition(1, theCoM + Vector3.zero);
+				envelope.lineCorrect.SetPosition(0, vCoM + Vector3.zero);
+				envelope.lineCorrect.SetPosition(1, vCoM + Vector3.zero);
 
 				envelope.lineCorrectProjected.SetPosition(0, Vector3.zero);
 				envelope.lineCorrectProjected.SetPosition(1, Vector3.zero);
@@ -1023,7 +1014,7 @@ namespace HLAirships
 		public void updateTargetSpecificVolumeFraction(float fraction, HLEnvelopePartModule envelope)
 		{
 			// Difference between specific volume and target specific volume
-			float delta = fraction - specificVolumeFractionEnvelope;
+			float delta = fraction - envelope.specificVolumeFractionEnvelope;
 
 			// Clamp the change to compress and expand rates
 			delta = Mathf.Clamp(delta, -compressRate, expandRate);
@@ -1032,7 +1023,7 @@ namespace HLAirships
 		}
 
 		// Distance from center of mass
-		public float DistanceFromCoM(Vector3 position, Vector3 CoM, Vector3 mainBody, Vector3 direction)
+		public static float DistanceFromCoM(Vector3 position, Vector3 CoM, Vector3 mainBody, Vector3 direction)
 		{
 			// project the vectors on the plane with up as a normal
 			return Vector3.Dot((position - mainBody) - (CoM - mainBody), direction);
