@@ -798,8 +798,9 @@ namespace HLAirships
 			return target;
 		}
 
-		private float altitudePGain = 1/5000.0f;
+		private float altitudePGain = 1/500000.0f;
 		private float altitudeDGain = 1/10.0f;
+		private float smallThreshold = 0.0000005f;
 
 		public float autoPitchControl(Vector3 position, HLEnvelopePartModule envelope, Vector3 vCoM, Vector3 gravity)
 		{
@@ -850,26 +851,28 @@ namespace HLAirships
 
 			// Are we already rotating towards the correct position?
 			float rotation = Vector3.Angle(stabilizeVector, -1 * gravity);
-			//if ((envelope.previousRotation - rotation) < 0.001)
-			//{
+			float correctionFactor = Vector3.Dot(correctVector * altitudePGain, positionVector);
+			if ((envelope.previousRotation - rotation) < 0.001)
+			{
 				// P Term
 				// Project correction onto relative position to get correction amount
-				envelope.autoTarget = Vector3.Dot(correctVector * altitudePGain, positionVector);
-			//}
-			//else
-			//{
-			//	envelope.autoTarget = 0;
-			//}
+				envelope.autoTarget = correctionFactor;
+			}
+			else
+			{
+				// if we're moving in the right direction, don't add any more P term
+				envelope.autoTarget = 0;
+			}
 
 			// D Term
-			// Adjust for rotation
-			envelope.autoTarget -= envelope.targetPitchBuoyancy * (rotation - envelope.previousRotation) * altitudeDGain;
+			// Try to dampen rotation
+			envelope.autoTarget += Math.Sign(correctionFactor) * Math.Abs(envelope.targetPitchBuoyancy) * (rotation - envelope.previousRotation) * altitudeDGain;
 
 			// Save this rotation
 			envelope.previousRotation = rotation;
 
 			// Do not send small adjustments
-			if (Math.Abs(envelope.autoTarget) < 0.00005)
+			if (Math.Abs(envelope.autoTarget) < smallThreshold)
 			{
 				envelope.autoTarget = 0;
 			}
