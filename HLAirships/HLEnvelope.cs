@@ -798,8 +798,8 @@ namespace HLAirships
 			return target;
 		}
 
-		private float altitudePGain = 1/12000.0f;
-		private float altitudeDGain = 1/100.0f;
+		private float altitudePGain = 1/5000.0f;
+		private float altitudeDGain = 1/10.0f;
 
 		public float autoPitchControl(Vector3 position, HLEnvelopePartModule envelope, Vector3 vCoM, Vector3 gravity)
 		{
