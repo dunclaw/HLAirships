@@ -386,81 +386,22 @@ namespace HLAirships
 				}
 			}
 
-			#region Toggle Pitch
 			if (Envelopes.Count > 1)
 			{
-				
+
 				GUILayout.BeginHorizontal();
+				string toggleAutoPitchString = "Auto Pitch Off";
 				if (ToggleAutoPitch)
 				{
-					ToggleManualPitch = false;
+					toggleAutoPitchString = "Auto Pitch On";
 				}
-				string toggleManualPitchString = "Manual Pitch Off";
-				if (ToggleManualPitch)
-				{
-					toggleManualPitchString = "Manual Pitch On";
-				}
-				ToggleManualPitch = GUILayout.Toggle(ToggleManualPitch, toggleManualPitchString);
+				ToggleAutoPitch = GUILayout.Toggle(ToggleAutoPitch, toggleAutoPitchString);
 				GUILayout.EndHorizontal();
-				
-
-				GUILayout.BeginHorizontal();
-				if (ToggleManualPitch)
-				{
-					ToggleAutoPitch = false;
-				}
-				string symmetricalPitchString = "Symetrical Pitch Off";
-				if (SymmetricalPitch)
-				{
-					symmetricalPitchString = "Symetrical Pitch On";
-				}
-				SymmetricalPitch = GUILayout.Toggle(SymmetricalPitch, symmetricalPitchString);
-				GUILayout.EndHorizontal();
-
-				if (SymmetricalPitch)
-				{
-					GUILayout.BeginHorizontal();
-					if (ToggleManualPitch)
-					{
-						ToggleAutoPitch = false;
-					}
-					string toggleAutoPitchString = "Auto Pitch Off";
-					if (ToggleAutoPitch)
-					{
-						toggleAutoPitchString = "Auto Pitch On";
-					}
-					ToggleAutoPitch = GUILayout.Toggle(ToggleAutoPitch, toggleAutoPitchString);
-					GUILayout.EndHorizontal();
-				}
-				else
-				{
-					ToggleAutoPitch = false;
-				}
-				
 			}
-			#endregion
 
 			if (ToggleAutoPitch)
 			{
 				willReset4 = true;
-				if (GUILayout.Button("Up is " + StabilizeDirection))
-				{
-					switch (StabilizeDirection)
-					{
-						case HLEnvelopePartModule.Direction.VesselUp:
-							StabilizeDirection = HLEnvelopePartModule.Direction.VesselForward;
-							StabilizeInvert = true;
-							break;
-						case HLEnvelopePartModule.Direction.VesselForward:
-							StabilizeDirection = HLEnvelopePartModule.Direction.VesselRight;
-							StabilizeInvert = false;
-							break;
-						case HLEnvelopePartModule.Direction.VesselRight:
-							StabilizeDirection = HLEnvelopePartModule.Direction.VesselUp;
-							StabilizeInvert = false;
-							break;
-					}
-				}
 			}
 			else
 			{
@@ -474,37 +415,7 @@ namespace HLAirships
 			if (ToggleAutoPitch)
 			{
 				willReset2 = true;
-				
-				string stabilizeStrengthString = StabilizeMultiplier.ToString("0.00");
-				if (StabilizeInvert)
-				{
-					stabilizeStrengthString = "-" + StabilizeMultiplier.ToString("0.00");
-				}
-				if (GUILayout.Button("Stabilizing Strength " + stabilizeStrengthString))
-				{
-					StabilizeMultiplier = 1f;
-				}
-				StabilizeMultiplier = GUILayout.HorizontalSlider(StabilizeMultiplier, 0.1f, 10f);
-				StabilizeInvert = GUILayout.Toggle(StabilizeInvert, "Invert Direction");
-				 
 
-				// Pitch angle setting
-				GUILayout.BeginHorizontal();
-				if (GUILayout.Button("-"))
-				{
-					PitchAngle -= 1f;
-				}
-				if (GUILayout.Button("Pitch Angle " + PitchAngle.ToString("0")))
-				{
-					PitchAngle = 0f;
-				}
-				if (GUILayout.Button("+"))
-				{
-					PitchAngle += 1f;
-				}
-				GUILayout.EndHorizontal();
-
-				PitchAngle = GUILayout.HorizontalSlider(PitchAngle, -90f, 90f);
 
 				DisplayHologram = GUILayout.Toggle(DisplayHologram, "Display Hologram at " + LineOffsetMultiplier.ToString("F1"));
 				if (DisplayHologram)
@@ -521,65 +432,6 @@ namespace HLAirships
 					willReset2 = false;
 				}
 			}
-
-			#region Manual Pitch Control Buttons
-			/*
-			// Manual pitch control.  Works alongside other controls.
-			if(toggleManualPitch)
-			{
-				willReset3 = true;
-				GUILayout.BeginHorizontal();
-				if (GUILayout.Button("Pitch Up", mySty))
-				{
-					targetBuoyancyP += 0.01f;
-					targetBuoyancyN -= 0.01f;
-				}
-				if (GUILayout.Button("Pitch Down", mySty))
-				{
-					targetBuoyancyP -= 0.01f;
-					targetBuoyancyN += 0.01f;
-				}
-				GUILayout.EndHorizontal();
-
-				GUILayout.BeginHorizontal();
-				GUILayout.Label("Forward \t\t\t Rear");
-				GUILayout.EndHorizontal();
-				GUILayout.BeginHorizontal();
-				if (GUILayout.Button("-", mySty))
-				{
-					targetBuoyancyP -= 0.01f;
-				}
-				targetBuoyancyP = Mathf.Clamp(targetBuoyancyP, -1f, 1f);
-				GUILayout.Label(Mathf.RoundToInt(targetBuoyancyP * 100) + "%");
-				if (GUILayout.Button("+", mySty))
-				{
-					targetBuoyancyP += 0.01f;
-				}
-				if (GUILayout.Button("-", mySty))
-				{
-					targetBuoyancyN -= 0.01f;
-				}
-				targetBuoyancyN = Mathf.Clamp(targetBuoyancyN, -1f, 1f); 
-				GUILayout.Label(Mathf.RoundToInt(targetBuoyancyN * 100) + "%");
-				if (GUILayout.Button("+", mySty))
-				{
-					targetBuoyancyN += 0.01f;
-				}
-				GUILayout.EndHorizontal();
-
-				foreach (HLEnvelopePartModule envelope in Envelopes)
-				{
-					envelope.targetBuoyancyN = targetBuoyancyN;
-					envelope.targetBuoyancyP = targetBuoyancyP;
-				}
-			}
-			else if (willReset3)
-			{
-				resetGUIsize = true;
-				willReset3 = false;
-			}
-			*/
-			#endregion
 
 			if (AnchorPresent)
 			{
@@ -603,19 +455,6 @@ namespace HLAirships
 			#region Debug
 			// Debug info
 
-			// if (Mathf.Abs(targetBoyantForceFractionCompressorTemp - targetBoyantForceFractionCompressor) > 0.002)
-			// debugHLAirship("targetBoyantForceFractionCompressor", targetBoyantForceFractionCompressor.ToString("0.000"));
-
-			// if (targetVerticalVelocityTemp != targetVerticalVelocity)
-			// debugHLAirship("targetVerticalVelocityTemp", targetVerticalVelocity.ToString("00.0"));
-
-			//GUILayout.BeginHorizontal();
-			//GUILayout.Label("Buoyancy: " + totalBuoyancy.ToString("0.0"));
-			//GUILayout.EndHorizontal();
-
-			//GUILayout.BeginHorizontal();
-			//GUILayout.Label("Gravity: " + totalGravityForce.ToString("0.0"));
-			//GUILayout.EndHorizontal();
 
 			GUILayout.BeginHorizontal();
 			GUILayout.Label("Buoyancy - Weight: " + (TotalBuoyancy - (CurrentVessel.GetTotalMass() * FlightGlobals.getGeeForceAtPosition(CurrentVessel.findWorldCenterOfMass()).magnitude)).ToString("0.00"));
@@ -663,8 +502,9 @@ namespace HLAirships
 			//    x += 1;
 			//}
 
-			GUI.DragWindow(new Rect(0, 0, 500, 20));
 			#endregion
+
+			GUI.DragWindow(new Rect(0, 0, 500, 20));
 		}
 
 

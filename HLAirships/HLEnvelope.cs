@@ -721,6 +721,12 @@ namespace HLAirships
 				}
 				SyncControlUIValues();
 			}
+			if (torques == null || torques.Length != Envelopes.Count)
+			{
+				torques = new Vector3[Envelopes.Count];
+				torqueArms = new Vector3[Envelopes.Count];
+				percent = new float[Envelopes.Count];
+			}
 		}
 
 		private void findParts()
@@ -745,45 +751,128 @@ namespace HLAirships
 			Vector3 vCoM = vessel.findWorldCenterOfMass();
 			Vector3 gravity = FlightGlobals.getGeeForceAtPosition(vCoM).normalized;
 
+			if (toggleAutoPitch)
+			{
+				NeutralizeEnvelopeTorque();
+			}
+
 			// The lead envelope sets the buoyancy for every envelope, including itself
 			foreach (HLEnvelopePartModule envelope in Envelopes)
 			{
 				envelope.targetBuoyantVessel = this.targetBuoyantVessel;
 
 
-				if (toggleManualPitch)
-				{
-					envelope.targetPitchBuoyancy = manualPitchControl(envelope.targetBuoyantVessel, envelope.eDistanceFromCoM);
-				}
-				else
-				{
-					if (toggleAutoPitch)
-					{
-						envelope.targetPitchBuoyancy += autoPitchControl(envelope.part.WCoM, envelope, vCoM, gravity);
-					}
-					else
-					{
-						envelope.targetPitchBuoyancy = 0;
-						envelope.autoTarget = 0;
-					}
-				}
+				//if (toggleManualPitch)
+				//{
+				//	envelope.targetPitchBuoyancy = manualPitchControl(envelope.targetBuoyantVessel, envelope.eDistanceFromCoM);
+				//}
+				//else
+				//{
+				//	if (toggleAutoPitch)
+				//	{
+				//		envelope.targetPitchBuoyancy += autoPitchControl(envelope.part.WCoM, envelope, vCoM, gravity);
+				//	}
+				//	else
+				//	{
+				//		envelope.targetPitchBuoyancy = 0;
+				//		envelope.autoTarget = 0;
+				//	}
+				//}
 
 
-				envelope.targetPitchBuoyancy = Mathf.Clamp(envelope.targetPitchBuoyancy, -0.25f, 0.25f);
+				//envelope.targetPitchBuoyancy = Mathf.Clamp(envelope.targetPitchBuoyancy, -0.25f, 0.25f);
 
 				float adjustBy = envelope.targetPitchBuoyancy;
 				// Balance out pitches to 0
-				if (symmetricalPitch)
-				{
-					adjustBy -= averagePitch;
-				}
+				//if (symmetricalPitch)
+				//{
+				//	adjustBy -= averagePitch;
+				//}
 
 				// Use total
 				envelope.updateTargetSpecificVolumeFraction(Mathf.Clamp01(adjustBy + targetBuoyantVessel), envelope);
 			}
 		}
+		private Vector3[] torques;
+		private Vector3[] torqueArms;
+		private float[] percent;
 
-		
+		private void NeutralizeEnvelopeTorque()
+		{
+			Vector3 vCoM = vessel.findWorldCenterOfMass();
+			Vector3 gravity = FlightGlobals.getGeeForceAtPosition(vCoM).normalized;
+
+			Vector3 sumTorque = new Vector3();
+			int i = 0;
+			foreach (HLEnvelopePartModule envelope in Envelopes)
+			{
+				envelope.targetBuoyantVessel = this.targetBuoyantVessel;
+				torqueArms[i] = envelope.part.WCoM - vCoM;
+				torques[i] = Vector3.Cross(torqueArms[i], envelope.maxBuoyancy * envelope.targetBuoyantVessel);
+				sumTorque += torques[i];
+				++i;
+			}
+			Vector3 correctTorque = sumTorque * -1;
+			i = 0;
+			float sumPercent = 0;
+			foreach (HLEnvelopePartModule envelope in Envelopes)
+			{
+				percent[i] = Vector3.Dot(correctTorque, torques[i]);
+				sumPercent += Math.Abs(percent[i]);
+				++i;
+			}
+			i = 0;
+			float torqueMagnitude = correctTorque.magnitude;
+			Vector3 checkTorque = new Vector3();
+			Vector3 planeNormal = correctTorque.normalized;
+			foreach (HLEnvelopePartModule envelope in Envelopes)
+			{
+				Vector3 torquePlane = ProjectVectorOnPlane(planeNormal, torqueArms[i]);
+				Vector3 gravPlane = ProjectVectorOnPlane(gravity, torquePlane);
+				float correctForce = (torqueMagnitude * (percent[i] / sumPercent)) / gravPlane.magnitude;
+				envelope.targetPitchBuoyancy = Mathf.Clamp(correctForce / envelope.maxBuoyancy.magnitude, -1.0f, 1.0f);
+
+				checkTorque += Vector3.Cross(torqueArms[i], envelope.maxBuoyancy * envelope.targetPitchBuoyancy);
+				if (displayHologram)
+				{
+					Vector3 lineOffset = gravity * -lineOffsetMultiplier;
+
+					envelope.lineGravity.SetPosition(0, vCoM + lineOffset);
+					envelope.lineGravity.SetPosition(1, vCoM + gravity + lineOffset);
+
+					envelope.linePosition.SetPosition(0, vCoM + lineOffset);
+					envelope.linePosition.SetPosition(1, envelope.part.WCoM + lineOffset);
+
+					envelope.linePositionProjected.SetPosition(0, envelope.part.WCoM + lineOffset);
+					envelope.linePositionProjected.SetPosition(1, envelope.part.WCoM + (maxBuoyancy * envelope.targetPitchBuoyancy * 3) + lineOffset);
+
+					envelope.lineCorrectProjected.SetPosition(0, envelope.part.WCoM + lineOffset);
+					envelope.lineCorrectProjected.SetPosition(1, envelope.part.WCoM + torques[i] + lineOffset);
+				}
+				else
+				{
+					envelope.lineGravity.SetPosition(0, Vector3.zero);
+					envelope.lineGravity.SetPosition(1, Vector3.zero);
+
+					envelope.linePosition.SetPosition(0, Vector3.zero);
+					envelope.linePosition.SetPosition(1, Vector3.zero);
+
+					envelope.linePositionProjected.SetPosition(0, Vector3.zero);
+					envelope.linePositionProjected.SetPosition(1, Vector3.zero);
+
+					envelope.lineCorrect.SetPosition(0, vCoM + Vector3.zero);
+					envelope.lineCorrect.SetPosition(1, vCoM + Vector3.zero);
+
+					envelope.lineCorrectProjected.SetPosition(0, Vector3.zero);
+					envelope.lineCorrectProjected.SetPosition(1, Vector3.zero);
+				}
+				++i;
+			}
+
+		}
+
+
+
 		public float manualPitchControl(float target, float distance)
 		{
 			// Envelopes in front and back are separately affected by pitch controls
@@ -799,8 +888,8 @@ namespace HLAirships
 		}
 
 		private float altitudePGain = 1/500000.0f;
-		private float altitudeDGain = 1/10.0f;
-		private float smallThreshold = 0.0000005f;
+		private float altitudeDGain = 1/100.0f;
+		private float smallThreshold = 0.00000005f;
 
 		public float autoPitchControl(Vector3 position, HLEnvelopePartModule envelope, Vector3 vCoM, Vector3 gravity)
 		{
@@ -861,7 +950,7 @@ namespace HLAirships
 			else
 			{
 				// if we're moving in the right direction, don't add any more P term
-				envelope.autoTarget = 0;
+				envelope.autoTarget = 0; 
 			}
 
 			// D Term
@@ -875,6 +964,10 @@ namespace HLAirships
 			if (Math.Abs(envelope.autoTarget) < smallThreshold)
 			{
 				envelope.autoTarget = 0;
+			}
+			if (Math.Abs(envelope.targetPitchBuoyancy) < smallThreshold)
+			{
+				envelope.targetPitchBuoyancy = 0;
 			}
 
 			if (displayHologram)
