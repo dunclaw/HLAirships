@@ -873,7 +873,7 @@ namespace HLAirships
 					}
 				}
 			}
-			while (stillSearching && ++i < 30);
+			while (stillSearching && ++i < 20);
 			NeutralizeTorqueValues();
 
 			lastGuess = currentGuess;
