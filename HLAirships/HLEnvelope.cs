@@ -725,6 +725,7 @@ namespace HLAirships
 			{
 				torques = new Vector3[Envelopes.Count];
 				torqueArms = new Vector3[Envelopes.Count];
+				coefficents = new Vector3[Envelopes.Count];
 				percent = new float[Envelopes.Count];
 			}
 		}
@@ -795,6 +796,7 @@ namespace HLAirships
 		}
 		private Vector3[] torques;
 		private Vector3[] torqueArms;
+		private Vector3[] coefficents;
 		private float[] percent;
 
 		private void NeutralizeEnvelopeTorque()
@@ -810,6 +812,9 @@ namespace HLAirships
 				torqueArms[i] = envelope.part.WCoM - vCoM;
 				torques[i] = Vector3.Cross(torqueArms[i], envelope.maxBuoyancy * envelope.targetBuoyantVessel);
 				sumTorque += torques[i];
+				coefficents[i].x = torqueArms[i].y * gravity.z - torqueArms[i].z * gravity.y;
+				coefficents[i].y = torqueArms[i].z * gravity.x - torqueArms[i].x * gravity.z;
+				coefficents[i].z = torqueArms[i].x * gravity.y - torqueArms[i].y * gravity.x;
 				++i;
 			}
 			Vector3 correctTorque = sumTorque * -1;
@@ -821,17 +826,29 @@ namespace HLAirships
 				sumPercent += Math.Abs(percent[i]);
 				++i;
 			}
+			for(int j = 0; j < percent.Length; ++j)
+			{
+				percent[j] /= sumPercent;
+			}
 			i = 0;
 			float torqueMagnitude = correctTorque.magnitude;
 			Vector3 checkTorque = new Vector3();
-			Vector3 planeNormal = correctTorque.normalized;
+			Vector3 sumCoefficents = coefficents[0];
+			sumCoefficents *= Math.Sign(percent[0]);
+			float baseline = Math.Abs(percent[0]);
+			for(int j = 1; j < coefficents.Length; ++j)
+			{
+				sumCoefficents.x += coefficents[j].x * (percent[j] / baseline);
+				sumCoefficents.y += coefficents[j].y * (percent[j] / baseline);
+				sumCoefficents.z += coefficents[j].z * (percent[j] / baseline);
+			}
+			float baseCorrectForceX = correctTorque.x / sumCoefficents.x;
+			float baseCorrectForceY = correctTorque.y / sumCoefficents.y;
+			float baseCorrectForceZ = correctTorque.z / sumCoefficents.z;
 			foreach (HLEnvelopePartModule envelope in Envelopes)
 			{
-				Vector3 torquePlane = ProjectVectorOnPlane(planeNormal, torqueArms[i]);
-				Vector3 gravPlane = ProjectVectorOnPlane(gravity, torquePlane);
-				float correctForce = (torqueMagnitude * (percent[i] / sumPercent)) / gravPlane.magnitude;
+				float correctForce = baseCorrectForceX * percent[i] / baseline;
 				envelope.targetPitchBuoyancy = Mathf.Clamp(correctForce / envelope.maxBuoyancy.magnitude, -1.0f, 1.0f);
-
 				checkTorque += Vector3.Cross(torqueArms[i], envelope.maxBuoyancy * envelope.targetPitchBuoyancy);
 				if (displayHologram)
 				{
@@ -847,7 +864,7 @@ namespace HLAirships
 					envelope.linePositionProjected.SetPosition(1, envelope.part.WCoM + (maxBuoyancy * envelope.targetPitchBuoyancy * 3) + lineOffset);
 
 					envelope.lineCorrectProjected.SetPosition(0, envelope.part.WCoM + lineOffset);
-					envelope.lineCorrectProjected.SetPosition(1, envelope.part.WCoM + torques[i] + lineOffset);
+					envelope.lineCorrectProjected.SetPosition(1, envelope.part.WCoM + torques[i] * 0.25f + lineOffset);
 				}
 				else
 				{
@@ -866,8 +883,56 @@ namespace HLAirships
 					envelope.lineCorrectProjected.SetPosition(0, Vector3.zero);
 					envelope.lineCorrectProjected.SetPosition(1, Vector3.zero);
 				}
-				++i;
+				i++;
 			}
+
+			// other method
+			//i = 0;
+			//Vector3 planeNormal = correctTorque.normalized;
+			//checkTorque = new Vector3();
+			//foreach (HLEnvelopePartModule envelope in Envelopes)
+			//{
+			//	Vector3 torquePlane = ProjectVectorOnPlane(planeNormal, torqueArms[i]);
+			//	Vector3 gravPlane = ProjectVectorOnPlane(gravity, torquePlane);
+			//	float correctForce = (torqueMagnitude * (percent[i] / sumPercent)) / gravPlane.magnitude;
+			//	envelope.targetPitchBuoyancy = Mathf.Clamp(correctForce / envelope.maxBuoyancy.magnitude, -1.0f, 1.0f);
+
+			//	checkTorque += Vector3.Cross(torqueArms[i], envelope.maxBuoyancy * envelope.targetPitchBuoyancy);
+			//	if (displayHologram)
+			//	{
+			//		Vector3 lineOffset = gravity * -lineOffsetMultiplier;
+
+			//		envelope.lineGravity.SetPosition(0, vCoM + lineOffset);
+			//		envelope.lineGravity.SetPosition(1, vCoM + gravity + lineOffset);
+
+			//		envelope.linePosition.SetPosition(0, vCoM + lineOffset);
+			//		envelope.linePosition.SetPosition(1, envelope.part.WCoM + lineOffset);
+
+			//		envelope.linePositionProjected.SetPosition(0, envelope.part.WCoM + lineOffset);
+			//		envelope.linePositionProjected.SetPosition(1, envelope.part.WCoM + (maxBuoyancy * envelope.targetPitchBuoyancy * 3) + lineOffset);
+
+			//		envelope.lineCorrectProjected.SetPosition(0, envelope.part.WCoM + lineOffset);
+			//		envelope.lineCorrectProjected.SetPosition(1, envelope.part.WCoM + torques[i] + lineOffset);
+			//	}
+			//	else
+			//	{
+			//		envelope.lineGravity.SetPosition(0, Vector3.zero);
+			//		envelope.lineGravity.SetPosition(1, Vector3.zero);
+
+			//		envelope.linePosition.SetPosition(0, Vector3.zero);
+			//		envelope.linePosition.SetPosition(1, Vector3.zero);
+
+			//		envelope.linePositionProjected.SetPosition(0, Vector3.zero);
+			//		envelope.linePositionProjected.SetPosition(1, Vector3.zero);
+
+			//		envelope.lineCorrect.SetPosition(0, vCoM + Vector3.zero);
+			//		envelope.lineCorrect.SetPosition(1, vCoM + Vector3.zero);
+
+			//		envelope.lineCorrectProjected.SetPosition(0, Vector3.zero);
+			//		envelope.lineCorrectProjected.SetPosition(1, Vector3.zero);
+			//	}
+			//	++i;
+			//}
 
 		}
 
