@@ -50,17 +50,10 @@ namespace HLAirships
 		public float TargetVerticalVelocity { get; set; }
 		public bool ToggleAltitudeControl { get; set; }
 		public bool ToggleAutoPitch { get; set; }
-		public bool ToggleManualPitch { get; set; }
-		public bool SymmetricalPitch { get; set; }
 		public float TotalBuoyancy { get; set; }
 		public Vessel CurrentVessel { get; set; }
 		public float MakeStationarySpeedMax { get; set; }
-		public bool TogglePersistenceControl { get; set; }
 		public Vector3 MaxBuoyancy { get; set; }
-		public HLEnvelopePartModule.Direction StabilizeDirection { get; set; }
-		public bool StabilizeInvert { get; set; }
-		public float StabilizeMultiplier { get; set; }
-		public float PitchAngle { get; set; }
 		public bool DisplayHologram { get; set; }
 		public float LineOffsetMultiplier { get; set; }
 		public bool AnchorPresent { get; set; }
@@ -348,33 +341,6 @@ namespace HLAirships
 				GUILayout.EndHorizontal();
 				#endregion
 
-				#region Persistence
-				// Allows "landing" (persistence) by slowing the vehicle, as long as the this.vessel has buoyancy
-				// dunclaw: not sure what this was for, but it appears to cause a crash and isn't necessary
-				//if (TotalBuoyancy > 0f)
-				//{
-				//	if (Mathf.Abs((int)CurrentVessel.horizontalSrfSpeed) < MakeStationarySpeedMax && Mathf.Abs((int)CurrentVessel.verticalSpeed) < MakeStationarySpeedMax && (CurrentVessel.Landed || CurrentVessel.Splashed))
-				//	{
-				//		GUILayout.BeginHorizontal();
-				//		TogglePersistenceControl = GUILayout.Toggle(TogglePersistenceControl, "Make Slow to Save", mySty);
-				//		GUILayout.EndHorizontal();
-				//	}
-				//	else
-				//	{
-				//		GUILayout.BeginHorizontal();
-				//		if (this.CurrentVessel.Landed || this.CurrentVessel.Splashed)
-				//		{
-				//			GUILayout.Label("Reduce Speed to Save");
-				//		}
-				//		else if (MaxBuoyancy.magnitude > 0)
-				//		{
-				//			GUILayout.Label("Touch Ground to Save");
-				//			TogglePersistenceControl = false;
-				//		}
-				//		GUILayout.EndHorizontal();
-				//	}
-				//}
-				#endregion
 			}
 			else
 			{
@@ -417,11 +383,11 @@ namespace HLAirships
 				willReset2 = true;
 
 
-				DisplayHologram = GUILayout.Toggle(DisplayHologram, "Display Hologram at " + LineOffsetMultiplier.ToString("F1"));
-				if (DisplayHologram)
-				{
-					LineOffsetMultiplier = GUILayout.HorizontalSlider(LineOffsetMultiplier, -20f, 20f);
-				}
+				//DisplayHologram = GUILayout.Toggle(DisplayHologram, "Display Hologram at " + LineOffsetMultiplier.ToString("F1"));
+				//if (DisplayHologram)
+				//{
+				//	LineOffsetMultiplier = GUILayout.HorizontalSlider(LineOffsetMultiplier, -20f, 20f);
+				//}
 			}
 			else
 			{
