@@ -209,10 +209,13 @@ namespace HLAirships
 
 		void onAppLaunchToggleOn()
 		{
-			MonoBehaviourExtended.LogFormatted_DebugOnly("TOn");
+			if (CurrentVessel != null)
+			{
+				MonoBehaviourExtended.LogFormatted_DebugOnly("TOn");
 
-			ControlWindowVisible = true;
-			MonoBehaviourExtended.LogFormatted_DebugOnly("{0}", ControlWindowVisible);
+				ControlWindowVisible = true;
+				MonoBehaviourExtended.LogFormatted_DebugOnly("{0}", ControlWindowVisible);
+			}
 		}
 		void onAppLaunchToggleOff()
 		{
