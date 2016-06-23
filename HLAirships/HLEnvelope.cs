@@ -756,6 +756,7 @@ namespace HLAirships
 			bool stillSearching = true;
 			float lSearch = 0;
 			float rSearch = 0;
+			float deltaSearch = 1.0f;
 			do
 			{
 				checkTorque = TryTorqueValues(vCoM, gravity, baseline, currentGuess);
@@ -786,8 +787,9 @@ namespace HLAirships
 						currentGuess = (currentGuess + lSearch) / 2.0f;
 					}
 				}
+				deltaSearch = rSearch - lSearch;
 			}
-			while (stillSearching && ++i < 20);
+			while (stillSearching && ++i < 20 && deltaSearch > 0.00001f);
 			NeutralizeTorqueValues();
 
 			lastGuess = currentGuess;

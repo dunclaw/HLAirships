@@ -385,12 +385,13 @@ namespace HLAirships
 			{
 				willReset2 = true;
 
-
+#if DEBUG
 				DisplayHologram = GUILayout.Toggle(DisplayHologram, "Display Hologram at " + LineOffsetMultiplier.ToString("F1"));
 				if (DisplayHologram)
 				{
 					LineOffsetMultiplier = GUILayout.HorizontalSlider(LineOffsetMultiplier, -20f, 20f);
 				}
+#endif
 			}
 			else
 			{

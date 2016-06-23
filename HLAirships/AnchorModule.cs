@@ -73,9 +73,8 @@ namespace HLAirships
 				vessel.SetPosition(anchorPosition);
 				vessel.SetWorldVelocity(zeroVector);
 				vessel.acceleration = zeroVector;
-				vessel.CoriolisAcc = zeroVector;
 				vessel.angularVelocity = zeroVector;
-				vessel.gForce = zeroVector;
+				vessel.geeForce = 0.0;
 				vessel.situation = Vessel.Situations.LANDED;
 				vessel.Landed = true;
 			}
