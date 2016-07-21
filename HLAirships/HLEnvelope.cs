@@ -38,12 +38,6 @@ namespace HLAirships
 		[KSPField(isPersistant = true, guiActive = false)]
 		public float limitBuoyantForce = 0f, minAtmPressure = -0.01f, dragDeployed = 0f, dragUndeployed = 0f, makeStationarySpeedMax = 1f, makeStationarySpeedClamp = 0.0f;
 
-		[KSPField(isPersistant = true, guiActive = false, guiName = "GUI On")]
-		public bool guiOn = true;
-
-		[KSPField(isPersistant = true, guiActive = false, guiName = "Balance Envelope Adjusments")]
-		public bool symmetricalPitch = false;
-
 		// Compress and expand rate per second
 		[KSPField(isPersistant = true, guiActive = false)]
 		public float compressRate = 0.01f, expandRate = 0.01f;
@@ -78,11 +72,8 @@ namespace HLAirships
 		[KSPField(isPersistant = true, guiActive = true, guiName = "Lead Envelope")]
 		public bool isLeadEnvelope = false;
 
-		public enum Direction { VesselRight, VesselForward, VesselUp };
-
-
 		[KSPField(isPersistant = true, guiActive = false)]
-		public float targetBuoyancyP = 0f, targetBuoyancyN = 0f, lineOffsetMultiplier = 2f;
+		public float lineOffsetMultiplier = 2f;
 
 		[KSPField(isPersistant = false, guiActive = false, guiName = "Display Hologram")]
 		public bool displayHologram = false;
@@ -156,7 +147,7 @@ namespace HLAirships
 
 		#region KSPEvents
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy ++")]
+		[KSPEvent(guiActive = true, guiName = "Envelope Buoyancy ++")]
 		public void BuoyancyPP_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -166,7 +157,7 @@ namespace HLAirships
 			targetPitchBuoyancy += 0.01f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy +")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy +")]
 		public void BuoyancyP_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -176,7 +167,7 @@ namespace HLAirships
 			targetPitchBuoyancy += 0.001f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy -")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy -")]
 		public void BuoyancyN_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -186,7 +177,7 @@ namespace HLAirships
 			targetPitchBuoyancy -= 0.001f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy --")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy --")]
 		public void BuoyancyNN_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -196,7 +187,7 @@ namespace HLAirships
 			targetPitchBuoyancy -= 0.01f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy Max")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy Max")]
 		public void BuoyancyM_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -206,7 +197,7 @@ namespace HLAirships
 			targetPitchBuoyancy = 1f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy Min")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy Min")]
 		public void BuoyancyZ_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -216,7 +207,7 @@ namespace HLAirships
 			targetPitchBuoyancy = -1f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Clear Adjustments")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Clear Adjustments")]
 		public void BuoyancyC_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -226,16 +217,10 @@ namespace HLAirships
 			targetPitchBuoyancy = 0f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Toggle GUI")]
+		[KSPEvent(active = true, guiActive = true, guiName = "Toggle GUI")]
 		public void guiToggle_Event()
 		{
-			part.SendEvent("guiToggle");
-		}
-
-		[KSPEvent(guiActive = false, guiActiveUnfocused = true, unfocusedRange = 2000)]
-		public void guiToggle()
-		{
-			if(HLEnvelopeControlWindow.Instance)
+			if (HLEnvelopeControlWindow.Instance)
 			{
 				HLEnvelopeControlWindow.Instance.ControlWindowVisible = !HLEnvelopeControlWindow.Instance.ControlWindowVisible;
 			}
