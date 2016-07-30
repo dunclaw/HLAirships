@@ -715,6 +715,11 @@ namespace HLAirships
 				++i;
 			}
 			Vector3 correctTorque = sumTorque * -1;
+			// if there's nothing to correct, we're done
+			if(correctTorque.magnitude < 0.000001)
+			{
+				return;
+			}
 			i = 0;
 			// compute percent each envelope contributes to that net torque
 			float sumPercent = 0;

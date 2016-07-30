@@ -17,21 +17,48 @@ namespace HLAirships
 		[KSPField(isPersistant = true, guiActive = false)]
 		Vessel.Situations previousState = Vessel.Situations.LANDED;
 
+		private bool inactive = true;
+
 		private static Vector3 zeroVector = new Vector3(0f, 0f, 0f);
 
 		public override void OnStart(StartState state)
 		{
 			if (state != StartState.Editor)
 			{
+				InitControlWindowState();
+			}
+		}
+
+		private void InitControlWindowState()
+		{
+			if (vessel != null)
+			{
 				anchorPosition = vessel.GetWorldPos3D();
 				part.force_activate();
-				previousState = vessel.situation;
-				if(HLEnvelopeControlWindow.Instance != null)
+				RememberPreviousState();
+				if (HLEnvelopeControlWindow.Instance != null && vessel.isActiveVessel)
 				{
 					HLEnvelopeControlWindow.Instance.AnchorPresent = true;
 					HLEnvelopeControlWindow.Instance.AnchorOn = anchored;
 					HLEnvelopeControlWindow.Instance.AutoAnchor = autoAnchor;
+					inactive = false;
 				}
+				else
+				{
+					inactive = true;
+				}
+			}
+		}
+
+		private void RememberPreviousState()
+		{
+			if (previousState != Vessel.Situations.LANDED)
+			{
+				// don't overwrite the previous state
+			}
+			else
+			{
+				previousState = vessel.situation;
 			}
 		}
 
@@ -42,6 +69,17 @@ namespace HLAirships
 			{
 				autoAnchor = false;
 				anchored = false;
+			}
+
+			// if we were initialized as inactive and are now active
+			if(inactive && vessel.isActiveVessel)
+			{
+				InitControlWindowState();
+			}
+			// if we were active, but are now inactive
+			if(!inactive && !vessel.isActiveVessel)
+			{
+				inactive = true;
 			}
 			// if we're inactive, see if we want to anchor 
 			if (!vessel.isActiveVessel && autoAnchor)
@@ -54,7 +92,6 @@ namespace HLAirships
 					vessel.GoOffRails();
 					vessel.Landed = false;
 					vessel.situation = previousState;
-					vessel.SetWorldVelocity(anchorVelocity - Krakensbane.GetFrameVelocity());
 				}
 				// if we're farther than 2km, auto anchor if needed
 				if ((vessel.GetWorldPos3D() - FlightGlobals.ActiveVessel.GetWorldPos3D()).magnitude > 2000.0f && (!anchored))
@@ -70,7 +107,6 @@ namespace HLAirships
 			}
 			if (anchored)
 			{
-				vessel.SetPosition(anchorPosition);
 				vessel.SetWorldVelocity(zeroVector);
 				vessel.acceleration = zeroVector;
 				vessel.angularVelocity = zeroVector;
@@ -78,13 +114,17 @@ namespace HLAirships
 				vessel.situation = Vessel.Situations.LANDED;
 				vessel.Landed = true;
 			}
-			if(HLEnvelopeControlWindow.Instance != null)
+			if(HLEnvelopeControlWindow.Instance != null && vessel.isActiveVessel)
 			{
 				// save the previous state if needed
 				if(HLEnvelopeControlWindow.Instance.AnchorOn && !anchored)
 				{
-					previousState = vessel.situation;
+					RememberPreviousState();
 					AnchorVessel();
+				}
+				else if (!HLEnvelopeControlWindow.Instance.AnchorOn && anchored)
+				{
+					vessel.situation = previousState;
 				}
 				anchored = HLEnvelopeControlWindow.Instance.AnchorOn;
 				autoAnchor = HLEnvelopeControlWindow.Instance.AutoAnchor;
@@ -103,7 +143,6 @@ namespace HLAirships
 				}
 				else
 				{
-					vessel.SetWorldVelocity(anchorVelocity);
 					vessel.situation = previousState;
 				}
 				anchored = !anchored;
@@ -123,7 +162,7 @@ namespace HLAirships
 		{
 			anchorPosition = vessel.GetWorldPos3D();
 			anchorVelocity = vessel.GetSrfVelocity();
-			previousState = vessel.situation;
+			RememberPreviousState();
 		}
 	}
 }
