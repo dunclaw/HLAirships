@@ -427,7 +427,7 @@ namespace HLAirships
 
 
 			GUILayout.BeginHorizontal();
-			GUILayout.Label("Buoyancy - Weight: " + (TotalBuoyancy - (CurrentVessel.GetTotalMass() * FlightGlobals.getGeeForceAtPosition(CurrentVessel.findWorldCenterOfMass()).magnitude)).ToString("0.00"));
+			GUILayout.Label("Buoyancy - Weight: " + (TotalBuoyancy - (CurrentVessel.GetTotalMass() * FlightGlobals.getGeeForceAtPosition(CurrentVessel.GetWorldPos3D()).magnitude)).ToString("0.00"));
 			GUILayout.EndHorizontal();
 
 			//GUILayout.BeginHorizontal();

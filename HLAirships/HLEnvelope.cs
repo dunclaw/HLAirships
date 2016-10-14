@@ -498,9 +498,6 @@ namespace HLAirships
 			// Direction in which the ship currently points
 			heading = (Vector3d)this.vessel.transform.up;
 
-			// Up, relative to the center of the nearest celestial body
-			Vector3d up = (this.vessel.findWorldCenterOfMass() - this.vessel.mainBody.position).normalized;
-
 			// Finds all parts within the vessel (specifically mass)
 			try { findParts(); }
 			catch (Exception ex) { print("findParts Exception!"); print(ex.Message); }
@@ -700,7 +697,7 @@ namespace HLAirships
 
 		private void NeutralizeEnvelopeTorque()
 		{
-			Vector3 vCoM = vessel.findWorldCenterOfMass();
+			Vector3 vCoM = vessel.GetWorldPos3D();
 			Vector3 gravity = FlightGlobals.getGeeForceAtPosition(vCoM).normalized;
 
 			// analyze system to determine net torque

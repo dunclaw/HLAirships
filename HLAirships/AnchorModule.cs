@@ -163,6 +163,10 @@ namespace HLAirships
 					RestoreVesselState();
 				}
 				isActive = true;
+				if(HLEnvelopeControlWindow.Instance != null)
+				{
+					HLEnvelopeControlWindow.Instance.AnchorOn = Anchored;
+				}
 			}
 		}
 
@@ -171,6 +175,10 @@ namespace HLAirships
 		public void ToggleAutoAnchor()
 		{
 			autoAnchor = !autoAnchor;
+			if (HLEnvelopeControlWindow.Instance != null)
+			{
+				HLEnvelopeControlWindow.Instance.AutoAnchor = autoAnchor;
+			}
 		}
 
 		private void AnchorVessel()
