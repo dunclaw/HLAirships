@@ -21,7 +21,6 @@ namespace HLAirships
 	{
 
 		public bool EditorWindowVisible { get; set; }
-		private IButton ToolbarButton { get; set; }
 		public virtual String MonoName { get; set; }
 		public static HLBuildAidWindow Instance { get; set; }
 		public float TotalEnvelopeVolume { get; set; }

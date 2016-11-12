@@ -43,7 +43,6 @@ namespace HLAirships
 	{
 
 		public bool ControlWindowVisible { get; set; }
-		private IButton ToolbarButton { get; set; }
 		public virtual String MonoName { get; set; }
 		public static HLEnvelopeControlWindow Instance { get; set; }
 		public float TargetBuoyantVessel { get; set; }
@@ -74,11 +73,6 @@ namespace HLAirships
 
 		internal override void Awake()
 		{
-			//setup the Toolbar button if necessary
-			if (ToolbarManager.ToolbarAvailable)
-			{
-				ToolbarButton = InitToolbarButton();
-			}
 			Instance = this;
 			GameEvents.onGUIApplicationLauncherReady.Add(OnGUIAppLauncherReady);
 			GameEvents.onGUIApplicationLauncherDestroyed.Add(DestroyAppLauncherButton);
@@ -478,45 +472,5 @@ namespace HLAirships
 		}
 
 
-		/// <summary>
-		/// initialises a Toolbar Button for this mod
-		/// </summary>
-		/// <returns>The ToolbarButtonWrapper that was created</returns>
-		internal IButton InitToolbarButton()
-		{
-			IButton btnReturn = null;
-			try
-			{
-				LogFormatted("Initialising the Toolbar Icon");
-				btnReturn = ToolbarManager.Instance.add("HLAirships", "HLAirshipsGUI");
-				btnReturn.TexturePath = "HLAirships/Icons/HLOffIcon";
-				btnReturn.ToolTip = "HLAirships";
-				btnReturn.OnClick += (e) =>
-				{
-					btnReturn.TexturePath = ControlWindowVisible ? "HLAirships/Icons/HLOffIcon" : "HLAirships/Icons/HLOnIcon";
-					ControlWindowVisible = !ControlWindowVisible;
-				};
-			}
-			catch (Exception ex)
-			{
-				DestroyToolbarButton(btnReturn);
-				LogFormatted("Error Initialising Toolbar Button: {0}", ex.Message);
-			}
-			return btnReturn;
-		}
-
-		/// <summary>
-		/// Destroys theToolbarButtonWrapper object
-		/// </summary>
-		/// <param name="btnToDestroy">Object to Destroy</param>
-		internal void DestroyToolbarButton(IButton btnToDestroy)
-		{
-			if (btnToDestroy != null)
-			{
-				LogFormatted("Destroying Toolbar Button");
-				btnToDestroy.Destroy();
-			}
-			btnToDestroy = null;
-		}
 	}
 }
