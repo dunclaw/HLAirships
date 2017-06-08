@@ -10,7 +10,6 @@ using KSP;
 using System.Linq;
 
 
-
 namespace HLAirships
 {
 
@@ -39,12 +38,6 @@ namespace HLAirships
 		[KSPField(isPersistant = true, guiActive = false)]
 		public float limitBuoyantForce = 0f, minAtmPressure = -0.01f, dragDeployed = 0f, dragUndeployed = 0f, makeStationarySpeedMax = 1f, makeStationarySpeedClamp = 0.0f;
 
-		[KSPField(isPersistant = true, guiActive = false, guiName = "GUI On")]
-		public bool guiOn = true;
-
-		[KSPField(isPersistant = true, guiActive = false, guiName = "Balance Envelope Adjusments")]
-		public bool symmetricalPitch = false;
-
 		// Compress and expand rate per second
 		[KSPField(isPersistant = true, guiActive = false)]
 		public float compressRate = 0.01f, expandRate = 0.01f;
@@ -69,36 +62,18 @@ namespace HLAirships
 		private bool toggleAltitudeControl = false;
 		[KSPField(isPersistant = true, guiActive = false, guiName = "Target Vertical Velocity", guiFormat = "F3")]
 		public float targetVerticalVelocity = 0f;
-		[KSPField(isPersistant = true, guiActive = false, guiName = "Make Stationary")]
-		private bool togglePersistenceControl = false;
-		// [KSPField(isPersistant = true, guiActive = true, guiName = "Manual Pitch Control")]
-		// public bool toggleManualPitch = false;
 		[KSPField(isPersistant = true, guiActive = false, guiName = "Automatic Pitch Control")]
 		public bool toggleAutoPitch = false;
-		[KSPField(isPersistant = true, guiActive = false, guiName = "Auto Pitch Adjust", guiFormat = "F5")]
-		public float autoTarget = 0;
 		[KSPField(isPersistant = true, guiActive = true, guiName = "Pitch %", guiFormat = "F3")]
 		public float targetPitchBuoyancy = 0;
-		[KSPField(isPersistant = true, guiActive = false, guiName = "Pitch Angle")]
-		public float pitchAngle = 0;
 		[KSPField(isPersistant = true, guiActive = false, guiName = "Deploy Animation")]
 		public bool animationDeploy = false;
 
 		[KSPField(isPersistant = true, guiActive = true, guiName = "Lead Envelope")]
 		public bool isLeadEnvelope = false;
 
-		public enum Direction { VesselRight, VesselForward, VesselUp };
-
-
-		[KSPField(isPersistant = true, guiActive = false, guiName = "Auto Up")]
-		public Direction stabilizeDirection = Direction.VesselUp;
-		[KSPField(isPersistant = true, guiActive = false, guiName = "Stabilize Multi")]
-		public float stabilizeMultiplier = 1f;
-		[KSPField(isPersistant = true, guiActive = false, guiName = "Stabilize Invert")]
-		public bool stabilizeInvert = false;
-
 		[KSPField(isPersistant = true, guiActive = false)]
-		public float targetBuoyancyP = 0f, targetBuoyancyN = 0f, lineOffsetMultiplier = 2f;
+		public float lineOffsetMultiplier = 2f;
 
 		[KSPField(isPersistant = false, guiActive = false, guiName = "Display Hologram")]
 		public bool displayHologram = false;
@@ -127,20 +102,12 @@ namespace HLAirships
 		// For automatic pitch control
 		float previousRotation;
 
-		public float eDistanceFromCoM;
-
 		private float totalBuoyancy;
 		private float totalBuoyancyMax;
 		private float totalMass;
 		private float totalGravityForce;
 		private float atmosDensity;
 
-		public float totalTorqueP;
-		public float totalTorqueN;
-		public float totalBuoyancyMaxP;
-		public float totalBuoyancyMaxN;
-		public float totalTorqueMaxP;
-		public float totalTorqueMaxN;
 
 		private List<HLEnvelopePartModule> Envelopes = new List<HLEnvelopePartModule>();
 		private Part leadEnvelope;
@@ -180,7 +147,7 @@ namespace HLAirships
 
 		#region KSPEvents
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy ++")]
+		[KSPEvent(guiActive = true, guiName = "Envelope Buoyancy ++")]
 		public void BuoyancyPP_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -190,7 +157,7 @@ namespace HLAirships
 			targetPitchBuoyancy += 0.01f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy +")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy +")]
 		public void BuoyancyP_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -200,7 +167,7 @@ namespace HLAirships
 			targetPitchBuoyancy += 0.001f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy -")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy -")]
 		public void BuoyancyN_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -210,7 +177,7 @@ namespace HLAirships
 			targetPitchBuoyancy -= 0.001f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy --")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy --")]
 		public void BuoyancyNN_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -220,7 +187,7 @@ namespace HLAirships
 			targetPitchBuoyancy -= 0.01f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy Max")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy Max")]
 		public void BuoyancyM_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -230,7 +197,7 @@ namespace HLAirships
 			targetPitchBuoyancy = 1f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy Min")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Buoyancy Min")]
 		public void BuoyancyZ_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -240,7 +207,7 @@ namespace HLAirships
 			targetPitchBuoyancy = -1f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Clear Adjustments")]
+		[KSPEvent(active = true, guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Envelope Clear Adjustments")]
 		public void BuoyancyC_Event()
 		{
 			foreach (HLEnvelopePartModule envelope in Envelopes)
@@ -250,16 +217,10 @@ namespace HLAirships
 			targetPitchBuoyancy = 0f;
 		}
 
-		[KSPEvent(guiActive = true, guiActiveUnfocused = true, unfocusedRange = 2000, guiName = "Toggle GUI")]
+		[KSPEvent(active = true, guiActive = true, guiName = "Toggle GUI")]
 		public void guiToggle_Event()
 		{
-			part.SendEvent("guiToggle");
-		}
-
-		[KSPEvent(guiActive = false, guiActiveUnfocused = true, unfocusedRange = 2000)]
-		public void guiToggle()
-		{
-			if(HLEnvelopeControlWindow.Instance)
+			if (HLEnvelopeControlWindow.Instance)
 			{
 				HLEnvelopeControlWindow.Instance.ControlWindowVisible = !HLEnvelopeControlWindow.Instance.ControlWindowVisible;
 			}
@@ -358,15 +319,9 @@ namespace HLAirships
 			/// Per-frame update 
 			/// Called ONLY when Part is ACTIVE! 
 
-			// Freeze in place if requested
-			if (togglePersistenceControl)
-				persistentParts();
-
-			// Sets one envelope to run the GUI and control logic
+			// Sets one envelope to run the control logic
 			determineLeadEnvelope();
 
-
-			// if (this.part != leadEnvelope) Events["guiToggle_Event"].active = false;
 
 			// Try to animate if there is no animation
 			if (envelopeHasAnimation)
@@ -543,9 +498,6 @@ namespace HLAirships
 			// Direction in which the ship currently points
 			heading = (Vector3d)this.vessel.transform.up;
 
-			// Up, relative to the center of the nearest celestial body
-			Vector3d up = (this.vessel.findWorldCenterOfMass() - this.vessel.mainBody.position).normalized;
-
 			// Finds all parts within the vessel (specifically mass)
 			try { findParts(); }
 			catch (Exception ex) { print("findParts Exception!"); print(ex.Message); }
@@ -579,11 +531,32 @@ namespace HLAirships
 					targetBuoyantVessel = HLEnvelopeControlWindow.Instance.TargetBuoyantVessel;
 				}
 				targetVerticalVelocity = HLEnvelopeControlWindow.Instance.TargetVerticalVelocity;
+				if(toggleAutoPitch != HLEnvelopeControlWindow.Instance.ToggleAutoPitch || 
+					displayHologram != HLEnvelopeControlWindow.Instance.DisplayHologram)
+				{
+					lineGravity.SetPosition(0, Vector3.zero);
+					lineGravity.SetPosition(1, Vector3.zero);
+
+					linePosition.SetPosition(0, Vector3.zero);
+					linePosition.SetPosition(1, Vector3.zero);
+
+					linePositionProjected.SetPosition(0, Vector3.zero);
+					linePositionProjected.SetPosition(1, Vector3.zero);
+
+					lineCorrect.SetPosition(0, Vector3.zero);
+					lineCorrect.SetPosition(1, Vector3.zero);
+
+					lineCorrectProjected.SetPosition(0, Vector3.zero);
+					lineCorrectProjected.SetPosition(1, Vector3.zero);
+				}
+				if (toggleAutoPitch != HLEnvelopeControlWindow.Instance.ToggleAutoPitch)
+				{
+					foreach(var envelope in Envelopes)
+					{
+						envelope.targetPitchBuoyancy = 0;
+					}
+				}
 				toggleAutoPitch = HLEnvelopeControlWindow.Instance.ToggleAutoPitch;
-				togglePersistenceControl = HLEnvelopeControlWindow.Instance.TogglePersistenceControl;
-				stabilizeDirection = HLEnvelopeControlWindow.Instance.StabilizeDirection;
-				stabilizeInvert = HLEnvelopeControlWindow.Instance.StabilizeInvert;
-				pitchAngle = HLEnvelopeControlWindow.Instance.PitchAngle;
 				displayHologram = HLEnvelopeControlWindow.Instance.DisplayHologram;
 				lineOffsetMultiplier = HLEnvelopeControlWindow.Instance.LineOffsetMultiplier;
 			}
@@ -602,10 +575,6 @@ namespace HLAirships
 				HLEnvelopeControlWindow.Instance.TargetVerticalVelocity = targetVerticalVelocity;
 				HLEnvelopeControlWindow.Instance.ToggleAltitudeControl = toggleAltitudeControl;
 				HLEnvelopeControlWindow.Instance.ToggleAutoPitch = toggleAutoPitch;
-				HLEnvelopeControlWindow.Instance.TogglePersistenceControl = togglePersistenceControl;
-				HLEnvelopeControlWindow.Instance.StabilizeDirection = stabilizeDirection;
-				HLEnvelopeControlWindow.Instance.StabilizeInvert = stabilizeInvert;
-				HLEnvelopeControlWindow.Instance.PitchAngle = pitchAngle;
 				HLEnvelopeControlWindow.Instance.DisplayHologram = displayHologram;
 				HLEnvelopeControlWindow.Instance.LineOffsetMultiplier = lineOffsetMultiplier;
 			}
@@ -628,8 +597,6 @@ namespace HLAirships
 				targetBuoyantVessel = Mathf.Clamp01(totalGravityForce / totalBuoyancyMax + (float)((targetVerticalVelocity - this.vessel.verticalSpeed) * Time.deltaTime));
 
 			}
-			else
-				togglePersistenceControl = false;
 		}
 
 		// Gathers information on the envelopes
@@ -637,13 +604,7 @@ namespace HLAirships
 		{
 			Envelopes.Clear();
 			totalBuoyancy = 0;
-			totalTorqueP = 0;
-			totalTorqueN = 0;
-			totalTorqueMaxP = 0;
-			totalTorqueMaxN = 0;
 			totalBuoyancyMax = 0;
-			totalBuoyancyMaxP = 0;
-			totalBuoyancyMaxN = 0;
 
 			// More info: http://www.grc.nasa.gov/WWW/k-12/WindTunnel/Activities/balance_of_forces.html
 
@@ -665,23 +626,7 @@ namespace HLAirships
 
 					Envelopes.Add(envelope);
 					totalBuoyancy += envelope.buoyantForce.magnitude;
-					totalBuoyancyMax += envelope.maxBuoyancy.magnitude;
-
-					/*
-					// Legacy pitch control
-					if (envelope.eDistanceFromCoM > 0)
-					{
-						totalTorqueP += envelope.buoyantForce.magnitude * envelope.eDistanceFromCoM;
-						totalBuoyancyMaxP += envelope.maxBuoyancy.magnitude;
-						totalTorqueMaxP += envelope.maxBuoyancy.magnitude * envelope.eDistanceFromCoM;
-					}
-					if (envelope.eDistanceFromCoM < 0)
-					{
-						totalTorqueN += envelope.buoyantForce.magnitude * envelope.eDistanceFromCoM;
-						totalBuoyancyMaxN += envelope.maxBuoyancy.magnitude;
-						totalTorqueMaxN += envelope.maxBuoyancy.magnitude * envelope.eDistanceFromCoM * -1;
-					}
-					 */
+					totalBuoyancyMax += envelope.maxBuoyancy.magnitude;					
 
 				}
 
@@ -691,17 +636,6 @@ namespace HLAirships
 					// Debug.Log("Adding GUI!");
 					envelope.isLeadEnvelope = true;
 
-					// Make sure all envelopes have the same logic
-					/*
-					envelope.toggleAltitudeControl = this.toggleAltitudeControl;
-					envelope.targetVerticalVelocity = this.targetVerticalVelocity;
-					envelope.togglePersistenceControl = this.togglePersistenceControl;
-					// envelope.toggleManualPitch = this.toggleManualPitch;
-					envelope.toggleAutoPitch = this.toggleAutoPitch;
-					envelope.pitchAngle = this.pitchAngle;
-					envelope.symmetricalPitch = this.symmetricalPitch;
-					envelope.displayHologram = this.displayHologram;
-					 */
 
 				}// If not, then check to see if this envelope should be promoted to lead envelope
 				else if (!vessel.parts.Contains(leadEnvelope))
@@ -719,6 +653,12 @@ namespace HLAirships
 				}
 				SyncControlUIValues();
 			}
+			if (torques == null || torques.Length != Envelopes.Count)
+			{
+				torques = new Vector3[Envelopes.Count];
+				torqueArms = new Vector3[Envelopes.Count];
+				percent = new float[Envelopes.Count];
+			}
 		}
 
 		private void findParts()
@@ -731,12 +671,9 @@ namespace HLAirships
 
 		public void setBuoyancy()
 		{
-			float sumPitch = 0;
-
-			// Find out the sum of all the pitches
-			foreach (HLEnvelopePartModule envelope in Envelopes)
+			if (toggleAutoPitch)
 			{
-				sumPitch += envelope.targetPitchBuoyancy;
+				NeutralizeEnvelopeTorque();
 			}
 
 			// The lead envelope sets the buoyancy for every envelope, including itself
@@ -744,148 +681,168 @@ namespace HLAirships
 			{
 				envelope.targetBuoyantVessel = this.targetBuoyantVessel;
 
-				// Balance out pitches to 0
-				if (symmetricalPitch) envelope.targetPitchBuoyancy -= sumPitch / Envelopes.Count;
 
-				// if(toggleManualPitch)
-				// envelope.targetPitchBuoyancy = manualPitchControl(envelope.targetBoyantForceFractionCompressor, envelope.eDistanceFromCoM);
-				// else
-				// if (toggleAutoPitch) envelope.targetPitchBuoyancy += autoPitchControl(part.rigidbody.worldCenterOfMass, envelope);
-				/*
-				else
-				{
-					envelope.targetPitchBuoyancy = 0;
-					envelope.autoTarget = 0;
-				}
-				 */
 
-				Mathf.Clamp01(envelope.targetPitchBuoyancy);
+				float adjustBy = envelope.targetPitchBuoyancy;
 
 				// Use total
-				envelope.updateTargetSpecificVolumeFraction(Mathf.Clamp01(envelope.targetPitchBuoyancy + targetBuoyantVessel), envelope);
+				envelope.updateTargetSpecificVolumeFraction(Mathf.Clamp01(adjustBy + targetBuoyantVessel), envelope);
 			}
 		}
+		private Vector3[] torques;
+		private Vector3[] torqueArms;
+		private float[] percent;
+		private float lastGuess = float.NaN;
+		private float searchThreshold = 0.05f;
 
-		/*
-		public float manualPitchControl(float target, float distance)
+		private void NeutralizeEnvelopeTorque()
 		{
-			// Envelopes in front and back are separately affected by pitch controls
-			if (distance > 0) target = targetBuoyancyP * eDistanceFromCoM;
-			else target = targetBuoyancyN * eDistanceFromCoM;
-			return target;
-		}
-		*/
+			Vector3 vCoM = vessel.GetWorldPos3D();
+			Vector3 gravity = FlightGlobals.getGeeForceAtPosition(vCoM).normalized;
 
-		public float autoPitchControl(Vector3 position, HLEnvelopePartModule envelope)
+			// analyze system to determine net torque
+			Vector3 sumTorque = new Vector3();
+			int i = 0;
+			foreach (HLEnvelopePartModule envelope in Envelopes)
+			{
+				envelope.targetBuoyantVessel = this.targetBuoyantVessel;
+				torqueArms[i] = envelope.part.WCoM - vCoM;
+				torques[i] = Vector3.Cross(torqueArms[i], envelope.maxBuoyancy * envelope.targetBuoyantVessel);
+				sumTorque += torques[i];
+				++i;
+			}
+			Vector3 correctTorque = sumTorque * -1;
+			// if there's nothing to correct, we're done
+			if(correctTorque.magnitude < 0.000001)
+			{
+				return;
+			}
+			i = 0;
+			// compute percent each envelope contributes to that net torque
+			float sumPercent = 0;
+			foreach (HLEnvelopePartModule envelope in Envelopes)
+			{
+				percent[i] = Vector3.Dot(correctTorque, torques[i]);
+				sumPercent += Math.Abs(percent[i]);
+				++i;
+			}
+			for (int j = 0; j < percent.Length; ++j)
+			{
+				percent[j] /= sumPercent;
+			}
+			i = 0;
+			// binary search on counter forces to apply at each envelope to achieve neutral torque
+			Vector3 checkTorque = new Vector3();
+			float baseline = Math.Abs(percent[0]);
+			float currentGuess = lastGuess;
+			float targetValue = correctTorque.magnitude;
+			if (float.IsNaN(lastGuess))
+			{
+				currentGuess = targetValue;
+			}
+			bool stillSearching = true;
+			float lSearch = 0;
+			float rSearch = 0;
+			float deltaSearch = 1.0f;
+			do
+			{
+				checkTorque = TryTorqueValues(vCoM, gravity, baseline, currentGuess);
+				float difference = (checkTorque - correctTorque).magnitude;
+				if ( difference < searchThreshold )
+				{
+					stillSearching = false;
+				}
+				else
+				{
+					float currentMag = checkTorque.magnitude;
+					if(currentMag < targetValue)
+					{
+						if(rSearch == 0)
+						{
+							lSearch = currentGuess;
+							currentGuess *= 2.0f;
+						}
+						else
+						{
+							lSearch = currentGuess;
+							currentGuess = (currentGuess + rSearch) / 2.0f;
+						}
+					}
+					else
+					{
+						rSearch = currentGuess;
+						currentGuess = (currentGuess + lSearch) / 2.0f;
+					}
+				}
+				deltaSearch = rSearch - lSearch;
+			}
+			while (stillSearching && ++i < 20 && deltaSearch > 0.00001f);
+			NeutralizeTorqueValues();
+
+			lastGuess = currentGuess;
+		}
+
+		private void NeutralizeTorqueValues()
 		{
-			Vector3 stabilizeVector = Vector3.one;
-			Vector3 pitchVector = Vector3.one;
-			switch (stabilizeDirection)
+			float total = 0f;
+			foreach (HLEnvelopePartModule envelope in Envelopes)
 			{
-				case Direction.VesselForward:
-					stabilizeVector = vessel.transform.forward;
-					pitchVector = -1 * vessel.transform.up;
-					// rotation = vessel.ctrlState.pitch;
-					break;
-				case Direction.VesselRight:
-					stabilizeVector = vessel.transform.right;
-					pitchVector = -1 * vessel.transform.up;
-					// rotation = vessel.ctrlState.roll;
-					break;
-				case Direction.VesselUp:
-					stabilizeVector = vessel.transform.up;
-					pitchVector = -1 * vessel.transform.forward;
-					// rotation = vessel.ctrlState.pitch;
-					break;
+				total += envelope.targetPitchBuoyancy;
 			}
-
-			// Factor in multiplier
-			stabilizeVector *= stabilizeMultiplier;
-			if (stabilizeInvert)
+			total /= -Envelopes.Count;
+			foreach (HLEnvelopePartModule envelope in Envelopes)
 			{
-				stabilizeVector *= -1;
-				pitchVector *= -1;
+				envelope.targetPitchBuoyancy += total;
 			}
-
-			// Pitch angle
-			if (pitchAngle < 0)
-				pitchVector *= -1;
-
-			// Slerp (yummy!) is a spherical rotation of a vector towards something
-			stabilizeVector = Vector3.Slerp(stabilizeVector, pitchVector, Mathf.Abs(pitchAngle) / 90);
-
-			// Center of Mass
-			Vector3 theCoM = vessel.findWorldCenterOfMass();
-
-			// Removes vertical component from the vector we are stabilizing to and the envelope's position
-			Vector3 correctVector = ProjectVectorOnPlane(FlightGlobals.getGeeForceAtPosition(theCoM).normalized, stabilizeVector);
-
-			Vector3 positionVector = ProjectVectorOnPlane(FlightGlobals.getGeeForceAtPosition(theCoM).normalized, position - vessel.CoM);
-
-			Vector3 lineOffset = FlightGlobals.getGeeForceAtPosition(theCoM).normalized * -lineOffsetMultiplier;
-
-			// makeLines(linePosition, Color.red);
-			// makeLines(linePositionProjected, Color.green);
-			// makeLines(lineUp, Color.blue);
-			// makeLines(lineUpProjected, Color.magenta);
-			// makeLines(lineGravity, Color.white); }
-
-			// Are we already rotating towards the correct position?
-			float rotation = Vector3.Angle(stabilizeVector, -1 * FlightGlobals.getGeeForceAtPosition(theCoM).normalized);
-			if ((previousRotation - rotation) < 0.001)
-			{
-				// Adjust for rotation
-				// envelope.autoTarget -= (rotation - previousRotation) / 10;
-
-				// Project correction onto relative position to get correction amount
-				envelope.autoTarget = Vector3.Dot(correctVector / 1000, positionVector);
-			}
-			else envelope.autoTarget = 0;
-			// Save this rotation
-			previousRotation = rotation;
-
-			// Do not send small adjustments
-			if (envelope.autoTarget < 0.0001)
-				envelope.autoTarget = 0;
-
-			if (displayHologram)
-			{
-				envelope.lineGravity.SetPosition(0, theCoM + lineOffset);
-				envelope.lineGravity.SetPosition(1, theCoM + FlightGlobals.getGeeForceAtPosition(theCoM).normalized + lineOffset);
-
-				envelope.linePosition.SetPosition(0, theCoM + lineOffset);
-				envelope.linePosition.SetPosition(1, position + lineOffset);
-
-				envelope.linePositionProjected.SetPosition(0, theCoM + lineOffset);
-				envelope.linePositionProjected.SetPosition(1, theCoM + positionVector + lineOffset);
-
-				envelope.lineCorrect.SetPosition(0, theCoM + lineOffset);
-				envelope.lineCorrect.SetPosition(1, theCoM + stabilizeVector + lineOffset);
-
-				envelope.lineCorrectProjected.SetPosition(0, theCoM + lineOffset);
-				envelope.lineCorrectProjected.SetPosition(1, theCoM + correctVector + lineOffset);
-			}
-			else
-			{
-				envelope.lineGravity.SetPosition(0, Vector3.zero);
-				envelope.lineGravity.SetPosition(1, Vector3.zero);
-
-				envelope.linePosition.SetPosition(0, Vector3.zero);
-				envelope.linePosition.SetPosition(1, Vector3.zero);
-
-				envelope.linePositionProjected.SetPosition(0, Vector3.zero);
-				envelope.linePositionProjected.SetPosition(1, Vector3.zero);
-
-				envelope.lineCorrect.SetPosition(0, theCoM + Vector3.zero);
-				envelope.lineCorrect.SetPosition(1, theCoM + Vector3.zero);
-
-				envelope.lineCorrectProjected.SetPosition(0, Vector3.zero);
-				envelope.lineCorrectProjected.SetPosition(1, Vector3.zero);
-			}
-
-			// Return result
-			return envelope.autoTarget;
 		}
+
+		private Vector3 TryTorqueValues(Vector3 vCoM, Vector3 gravity, float baseline, float baseCorrectForce)
+		{
+			Vector3 checkTorque = new Vector3();
+			int i = 0;
+			foreach (HLEnvelopePartModule envelope in Envelopes)
+			{
+				float correctForce = baseCorrectForce * percent[i] / baseline;
+				envelope.targetPitchBuoyancy = Mathf.Clamp(correctForce / envelope.maxBuoyancy.magnitude, -1.0f, 1.0f);
+				checkTorque += Vector3.Cross(torqueArms[i], envelope.maxBuoyancy * envelope.targetPitchBuoyancy);
+				if (displayHologram)
+				{
+					Vector3 lineOffset = gravity * -lineOffsetMultiplier;
+
+					envelope.lineGravity.SetPosition(0, vCoM + lineOffset);
+					envelope.lineGravity.SetPosition(1, vCoM + gravity + lineOffset);
+
+					envelope.linePosition.SetPosition(0, vCoM + lineOffset);
+					envelope.linePosition.SetPosition(1, envelope.part.WCoM + lineOffset);
+
+					envelope.linePositionProjected.SetPosition(0, envelope.part.WCoM + lineOffset);
+					envelope.linePositionProjected.SetPosition(1, envelope.part.WCoM + (maxBuoyancy * envelope.targetPitchBuoyancy * 3) + lineOffset);
+
+					envelope.lineCorrectProjected.SetPosition(0, envelope.part.WCoM + lineOffset);
+					envelope.lineCorrectProjected.SetPosition(1, envelope.part.WCoM + torques[i] * 0.1f + lineOffset);
+				}
+				else
+				{
+					envelope.lineGravity.SetPosition(0, Vector3.zero);
+					envelope.lineGravity.SetPosition(1, Vector3.zero);
+
+					envelope.linePosition.SetPosition(0, Vector3.zero);
+					envelope.linePosition.SetPosition(1, Vector3.zero);
+
+					envelope.linePositionProjected.SetPosition(0, Vector3.zero);
+					envelope.linePositionProjected.SetPosition(1, Vector3.zero);
+
+					envelope.lineCorrect.SetPosition(0, vCoM + Vector3.zero);
+					envelope.lineCorrect.SetPosition(1, vCoM + Vector3.zero);
+
+					envelope.lineCorrectProjected.SetPosition(0, Vector3.zero);
+					envelope.lineCorrectProjected.SetPosition(1, Vector3.zero);
+				}
+				i++;
+			}
+			return checkTorque;
+		}
+
 
 		// From http://wiki.unity3d.com/index.php?title=3d_Math_functions
 		//Projects a vector onto a plane. The output is not normalized.
@@ -894,41 +851,10 @@ namespace HLAirships
 			return vector - (Vector3.Dot(vector, planeNormal) * planeNormal);
 		}
 
-		// I talked to Mu and it sounds like saving and loading is going to be redone in 0.19 or 0.20, so I'm not going to worry about mid-air saving until then.
-		// Update:  0.19 and 0.20 have come and gone an no word on this being redone still.  :P
-		private void persistentParts()
-		{
-			// this.vessel.SetWorldVelocity(new Vector3d(0,0,0));
-
-			// This code causes vessel to explode when executed
-			//if (this.vessel.srf_velocity.magnitude > makeStationarySpeedClamp)
-			//{
-			//	this.vessel.SetWorldVelocity(vessel.srf_velocity.normalized * makeStationarySpeedClamp * 0.9);
-			//}
-
-			vessel.Landed = true;
-			// vessel.ctrlState.mainThrottle = 0;
-		}
 
 		// Envelopes determine their positions and effect buoyant force on themselves
 		public void envelopeUpdate()
 		{
-			Vector3 stabilizeVector = Vector3.one;
-			switch (stabilizeDirection)
-			{
-				case Direction.VesselForward:
-					stabilizeVector = vessel.transform.forward;
-					break;
-				case Direction.VesselRight:
-					stabilizeVector = vessel.transform.right;
-					break;
-				case Direction.VesselUp:
-					stabilizeVector = vessel.transform.up;
-					break;
-			}
-			try { eDistanceFromCoM = DistanceFromCoM(part.WCoM, vessel.findWorldCenterOfMass(), vessel.mainBody.position, stabilizeVector); }
-			catch (Exception ex) { print("eDistanceFromCoM Exception!"); print(ex.Message); }
-
 			float pressure = (float)FlightGlobals.getStaticPressure();
 
 			// Compute the buoyant force
@@ -998,7 +924,7 @@ namespace HLAirships
 		public void updateTargetSpecificVolumeFraction(float fraction, HLEnvelopePartModule envelope)
 		{
 			// Difference between specific volume and target specific volume
-			float delta = fraction - specificVolumeFractionEnvelope;
+			float delta = fraction - envelope.specificVolumeFractionEnvelope;
 
 			// Clamp the change to compress and expand rates
 			delta = Mathf.Clamp(delta, -compressRate, expandRate);
@@ -1007,7 +933,7 @@ namespace HLAirships
 		}
 
 		// Distance from center of mass
-		public float DistanceFromCoM(Vector3 position, Vector3 CoM, Vector3 mainBody, Vector3 direction)
+		public static float DistanceFromCoM(Vector3 position, Vector3 CoM, Vector3 mainBody, Vector3 direction)
 		{
 			// project the vectors on the plane with up as a normal
 			return Vector3.Dot((position - mainBody) - (CoM - mainBody), direction);
