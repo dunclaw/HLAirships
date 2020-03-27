@@ -24,7 +24,6 @@ namespace HLAirships
 	}
 
 
-
 	public class HLEnvelopePartModule : PartModule
 	{
 		// Private variables cannot be changed by the part.cfg file
@@ -122,11 +121,11 @@ namespace HLAirships
 		private LineRenderer linePosition = null;
 		private LineRenderer lineCorrectProjected = null;
 		private LineRenderer linePositionProjected = null;
-		private GameObject objGravity = new GameObject();
-		private GameObject objUp = new GameObject();
-		private GameObject objPosition = new GameObject();
-		private GameObject objUpProjected = new GameObject();
-		private GameObject objPositionProjected = new GameObject();
+        private GameObject objGravity = null;
+        private GameObject objUp = null;
+		private GameObject objPosition = null;
+		private GameObject objUpProjected = null;
+		private GameObject objPositionProjected = null;
 
 		// Animation
 		private Animation m_Animation;
@@ -282,12 +281,21 @@ namespace HLAirships
 
 		public override void OnAwake()
 		{
-			/// Constructor style setup. 
-			/// Called in the Part\'s Awake method.  
-			/// The model may not be built by this point. 
+            if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight)
+                return;
 
-			// Set starting animation state
-			Debug.Log("Set Envelope Animation");
+        this.objGravity = new GameObject();
+        this.objUp = new GameObject();
+        this.objPosition = new GameObject();
+        this.objUpProjected = new GameObject();
+        this.objPositionProjected = new GameObject();
+
+        /// Constructor style setup. 
+        /// Called in the Part\'s Awake method.  
+        /// The model may not be built by this point. 
+
+        // Set starting animation state
+        Debug.Log("Set Envelope Animation");
 			if (animationState == 0 || targetBuoyantVessel == 0)
 			{
 				// If it does not have animation start it "opened"
@@ -316,11 +324,14 @@ namespace HLAirships
 
 		public override void OnUpdate()
 		{
-			/// Per-frame update 
-			/// Called ONLY when Part is ACTIVE! 
+            if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight)
+                return;
 
-			// Sets one envelope to run the control logic
-			determineLeadEnvelope();
+            /// Per-frame update 
+            /// Called ONLY when Part is ACTIVE! 
+
+            // Sets one envelope to run the control logic
+            determineLeadEnvelope();
 
 
 			// Try to animate if there is no animation
@@ -427,6 +438,9 @@ namespace HLAirships
 
 		public override void OnStart(StartState state)
 		{
+            if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight)
+                return;
+
 			// OnFlightStart seems to have been removed
 			/// Called during the Part startup. 
 			/// StartState gives flag values of initial state
