@@ -487,6 +487,9 @@ namespace HLAirships
 			/// Called ONLY when Part is ACTIVE!
 			/// 
 
+			if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight)
+				return;
+
 			if (leadEnvelope == this.part) leadEnvelopeUpdate();
 
 			// Update buoyancy properties
