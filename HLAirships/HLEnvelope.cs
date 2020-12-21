@@ -281,21 +281,18 @@ namespace HLAirships
 
 		public override void OnAwake()
 		{
-            if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight)
-                return;
+			/// Constructor style setup. 
+			/// Called in the Part\'s Awake method.  
+			/// The model may not be built by this point. 
 
-        this.objGravity = new GameObject();
-        this.objUp = new GameObject();
-        this.objPosition = new GameObject();
-        this.objUpProjected = new GameObject();
-        this.objPositionProjected = new GameObject();
+			this.objGravity = new GameObject();
+			this.objUp = new GameObject();
+			this.objPosition = new GameObject();
+			this.objUpProjected = new GameObject();
+			this.objPositionProjected = new GameObject();
 
-        /// Constructor style setup. 
-        /// Called in the Part\'s Awake method.  
-        /// The model may not be built by this point. 
-
-        // Set starting animation state
-        Debug.Log("Set Envelope Animation");
+			// Set starting animation state
+			Debug.Log("Set Envelope Animation");
 			if (animationState == 0 || targetBuoyantVessel == 0)
 			{
 				// If it does not have animation start it "opened"
@@ -438,9 +435,6 @@ namespace HLAirships
 
 		public override void OnStart(StartState state)
 		{
-            if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight)
-                return;
-
 			// OnFlightStart seems to have been removed
 			/// Called during the Part startup. 
 			/// StartState gives flag values of initial state
@@ -492,6 +486,9 @@ namespace HLAirships
 			/// Per-physx-frame update 
 			/// Called ONLY when Part is ACTIVE!
 			/// 
+
+			if (!HighLogic.LoadedSceneIsEditor && !HighLogic.LoadedSceneIsFlight)
+				return;
 
 			if (leadEnvelope == this.part) leadEnvelopeUpdate();
 
